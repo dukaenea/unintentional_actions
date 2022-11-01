@@ -15,4 +15,4 @@ conda activate ua
 
 # execute the python script
 cd /BS/unintentional_actions/work/unintentional_actions/action_classification
-python main.py /BS/unintentional_actions/work/unintentional_actions/configs/ablations/transform_type_ablations/stage3/transform_type_ablation_double_flip_stage3_f2c.yml
+python main.py /BS/unintentional_actions/work/unintentional_actions/configs/r3d_backbone/r3d_stage3_f2c_finetune.yml

@@ -36,7 +36,7 @@ general:
 #  storage: '/BS/long_tail/work/duka'
 #  log_save_dir: '/BS/long_tail/work/duka'
 longformer:
-  embed_dim: 768
+  embed_dim: 512
   max_positions_embedding: 7200
   num_attention_heads: 16
   num_hidden_layers: 3
@@ -51,7 +51,7 @@ longformer:
   hidden_dropout_prob: 0.1
   hidden_dim: 512
   mlp_dropout: 0.2
-  mlp_dim: 256
+  mlp_dim: 1024
   num_classes: 8
   num_classes_ptr: 8
   vtn_ptr_path: ''
@@ -84,10 +84,10 @@ train:
   contrastive_loss: false
   rep_learning: true
   optim: 'adam'
-  lr: 0.0001
+  lr: 0.0005
   weight_decay: 0.0001
   test_freq: 1
-  batch_size: 16
+  batch_size: 4
   num_workers: 8
 
 vizdom:

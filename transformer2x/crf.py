@@ -45,11 +45,9 @@ class CRF(nn.Module):
         super().__init__()
         self.num_tags = num_tags
         self.batch_first = batch_first
-        self.start_transitions = torch.tensor([1.0, 0.0, 0.0]).cuda() #nn.Parameter(torch.empty(num_tags))
-        self.end_transitions = torch.tensor([0.0, 0.0, 1.0]).cuda() # nn.Parameter(torch.empty(num_tags))
-        self.transitions = torch.tensor([[1.0, 1.0, -1.0],
-                                         [-1.0, 1.0, 1.0],
-                                         [-1.0, -1.0, 1.0]]).cuda() # nn.Parameter(torch.empty(num_tags, num_tags))
+        self.start_transitions = nn.Parameter(torch.empty(num_tags))
+        self.end_transitions = nn.Parameter(torch.empty(num_tags))
+        self.transitions = nn.Parameter(torch.empty(num_tags, num_tags))
 
         # self.reset_parameters()
 
@@ -72,6 +70,7 @@ class CRF(nn.Module):
             tags: torch.LongTensor,
             mask: Optional[torch.ByteTensor] = None,
             reduction: str = 'sum',
+            compute_probs = False
     ) -> torch.Tensor:
         """Compute the conditional log likelihood of a sequence of tags given emission scores.
 
@@ -93,32 +92,34 @@ class CRF(nn.Module):
             `~torch.Tensor`: The log likelihood. This will have size ``(batch_size,)`` if
             reduction is ``none``, ``()`` otherwise.
         """
-        self._validate(emissions, tags=tags, mask=mask)
-        if reduction not in ('none', 'sum', 'mean', 'token_mean'):
-            raise ValueError(f'invalid reduction: {reduction}')
-        if mask is None:
-            mask = torch.ones_like(tags, dtype=torch.uint8)
+        if compute_probs:
+            return self.compute_marginal_probabilities(emissions, mask)
+        else:
+            self._validate(emissions, tags=tags, mask=mask)
+            if reduction not in ('none', 'sum', 'mean', 'token_mean'):
+                raise ValueError(f'invalid reduction: {reduction}')
+            if mask is None:
+                mask = torch.ones_like(tags, dtype=torch.uint8)
 
-        if self.batch_first:
-            emissions = emissions.transpose(0, 1)
-            tags = tags.transpose(0, 1)
-            mask = mask.transpose(0, 1)
+            if self.batch_first:
+                emissions = emissions.transpose(0, 1)
+                tags = tags.transpose(0, 1)
+                mask = mask.transpose(0, 1)
+            # shape: (batch_size,)
+            numerator = self._compute_score(emissions, tags, mask)
+            # shape: (batch_size,)
+            denominator = self._compute_normalizer(emissions, mask)
+            # shape: (batch_size,)
+            llh = numerator - denominator
 
-        # shape: (batch_size,)
-        numerator = self._compute_score(emissions, tags, mask)
-        # shape: (batch_size,)
-        denominator = self._compute_normalizer(emissions, mask)
-        # shape: (batch_size,)
-        llh = numerator - denominator
-
-        if reduction == 'none':
-            return llh
-        if reduction == 'sum':
-            return llh.sum()
-        if reduction == 'mean':
-            return llh.mean()
-        assert reduction == 'token_mean'
-        return llh.sum() / mask.float().sum()
+            if reduction == 'none':
+                return llh
+            if reduction == 'sum':
+                return llh.sum()
+            if reduction == 'mean':
+                return llh.mean()
+            assert reduction == 'token_mean'
+            return llh.sum() / mask.float().sum()
 
     def decode(self, emissions: torch.Tensor,
                mask: Optional[torch.ByteTensor] = None) -> List[List[int]]:

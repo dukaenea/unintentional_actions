@@ -112,7 +112,7 @@ class KineticsAndFails(VisionDataset):
         self.fails_path = fails_path
         # self.fails_flow_path = fails_flow_path
         self.selfsup_loss = selfsup_loss
-        self.get_clip_times = get_clip_times
+        self.get_clip_times = True
         self.anticipate_label = anticipate_label
         data_proportion = 1 if val else data_proportion
 
@@ -290,7 +290,7 @@ class KineticsAndFails(VisionDataset):
 
     def compute_clip_times(self, video_idx, clip_idx):
         video_path = self.video_clips.video_paths[video_idx]
-        video_path = os.path.join(self.fails_path, os.path.sep.join(video_path.rsplit(os.path.sep, 2)[-2:]))
+        # video_path = os.path.join(self.fails_path, os.path.sep.join(video_path.rsplit(os.path.sep, 2)[-2:]))
         clip_pts = self.video_clips.clips[video_idx][clip_idx]
         start_pts = clip_pts[0].item()
         end_pts = clip_pts[-1].item()
@@ -403,21 +403,26 @@ class KineticsAndFails(VisionDataset):
         # total_time = time.time() - start_time
         # logger.debug("Time to load the data: %f" % total_time)
         video_name = self.video_clips.video_paths[video_idx].split('/')[-1].replace('.mp4', '')
+        t_time = self.fails_data[video_name]['t']
         return {'features': video,
                 'label': label,
                 'pure_nr_frames': 16,
                 'video_name': video_name,
-                'clip_idx': clip_idx} # , (video_path, t_start, t_end, *other)
+                'clip_idx': clip_idx,
+                'times': (t_start, t_end),
+                't': t_time,
+                'rel_t': self.fails_data[video_name]['rel_t'],
+                'video_idx': video_idx} # , (video_path, t_start, t_end, *other)
 
 
 def get_video_loader_frames(args):
     # args = Namespace(**kwargs)
     args.fails_video_list = None
     if args.val:
-        args.fails_path = os.path.join(args.fails_path, 'val_downsize')
+        args.fails_path = os.path.join(args.fails_path, 'val')
         args.kinetics_path = os.path.join(args.kinetics_path, 'val')
     else:
-        args.fails_path = os.path.join(args.fails_path, 'train_downsize')
+        args.fails_path = os.path.join(args.fails_path, 'train')
         # args.kinetics_path = os.path.join(args.kinetics_path, 'train')
     if args.fails_action_split:
         args.fails_path = None

@@ -36,12 +36,12 @@ def train(**kwargs):
     # if opt.lr_scheduler == 'aiayn': # Attention is All You Need
     aiayn_scheduler = AIAYNScheduler(opt.hidden_dim,
                                      0.3 * (len(train_loader) * opt.epochs)) # 10% of the steps for the warmup
-    # test(model=model,
-    #      loss=loss,
-    #      dataloader=val_loader,
-    #      mode='val',
-    #      time=tst,
-    #      epoch=-1)
+    test(model=model,
+         loss=loss,
+         dataloader=val_loader,
+         mode='val',
+         time=tst,
+         epoch=-1)
     # logger.debug(str(loss.weight))
     logger.debug('Starting training for %d epochs:' % opt.epochs)
     new_lr = opt.lr
@@ -67,6 +67,7 @@ def train(**kwargs):
             iterator = enumerate(train_loader)
 
         for idx, data in iterator:
+
             optimizer.zero_grad()
             videos = data['features']
             pure_nr_frames = data['pure_nr_frames']
@@ -74,10 +75,16 @@ def train(**kwargs):
 
             if opt.use_crf:
                 videos, position_ids, pnf = prep_for_local(videos, pure_nr_frames)
-                out = model(videos, position_ids, None, pure_nr_frames)
+                if opt.backbone == 'vit_longformer':
+                    out = model(videos, position_ids, None, pure_nr_frames)
+                else:
+                    out = model(videos.permute(0, 2, 1, 3, 4))
                 pure_nr_frames = torch.t(pure_nr_frames)[0]
                 videos = prep_for_crf(out, pure_nr_frames)
-                _loss = model(videos, None, None, pure_nr_frames, labels=labels, for_crf=True).mean()
+                if opt.backbone == 'vit_longformer':
+                    _loss = model(videos, None, None, pure_nr_frames, labels=labels, for_crf=True).mean()
+                else:
+                    _loss = model(videos, labels=labels, for_crf=True).mean()
             else:
                 if opt.backbone == 'vit_longformer':
                     position_ids = torch.tensor(list(range(0, videos.shape[1])))\

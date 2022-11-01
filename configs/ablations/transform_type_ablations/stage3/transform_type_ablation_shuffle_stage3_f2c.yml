@@ -32,7 +32,7 @@ general:
   gpu_parallel: true
   backbone_lr_factor: 1
   cos_decay_lr_factor: 0.01
-  pretrained: true
+  pretrained: false
 longformer:
   embed_dim: 768
   max_positions_embedding: 7200

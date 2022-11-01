@@ -80,10 +80,10 @@ class VTN(nn.Module):
         self._build_model()
 
     def _build_model(self):
-        self.backbone = vit_base_patch16_224(pretrained=True,
-                                             num_classes=0,
-                                             drop_path_rate=0,
-                                             drop_rate=0)
+        # self.backbone = vit_base_patch16_224(pretrained=True,
+        #                                      num_classes=0,
+        #                                      drop_path_rate=0,
+        #                                      drop_rate=0)
         self.cls_token = nn.Parameter(torch.randn(1, 1, opt.embed_dim))
         self.lin_projector = nn.Linear(3 * opt.cuboid_resolution ** 3, opt.embed_dim)
         if opt.use_crf:

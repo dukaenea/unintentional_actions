@@ -220,7 +220,8 @@ def learn_representation():
             opt.balance_fails_only = False
             opt.all_fail_videos = False
             opt.load_videos = True
-            opt.step_between_clips_sec = 0.25
+            opt.load_frames = opt.backbone == 'r3d_18'
+            opt.step_between_clips_sec = 1
             train_loader = get_video_loader_trn_2x(opt)
             opt.val = True
             opt.fails_path = '/BS/unintentional_actions/nobackup/oops/oops_dataset/oops_video'
@@ -231,6 +232,7 @@ def learn_representation():
             opt.balance_fails_only = True
             opt.all_fail_videos = False
             opt.load_videos = False
+            opt.load_frames = opt.backbone == 'r3d_18'
             # # opt.step_between_clips_sec = 1.0
             if opt.backbone == 'vit_longformer':
                 train_loader = get_video_loader(opt)

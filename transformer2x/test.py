@@ -21,8 +21,8 @@ import cv2
 from visualization.tsne_visualizer import do_tsne
 
 
-vis_path = '/BS/unintentional_actions/work/storage/visualisations/bad'
-vis_path_plot = '/BS/unintentional_actions/work/storage/visualisations/bad/plots'
+vis_path = '/BS/unintentional_actions/work/storage/visualisations'
+vis_path_plot = '/BS/unintentional_actions/work/storage/visualisations/plots'
 base_vid_path = '/BS/unintentional_actions/nobackup/oops/oops_dataset/oops_video/val'
 
 def test(**kwargs):
@@ -119,11 +119,11 @@ def test(**kwargs):
 
             if opt.use_crf:
                 if opt.crf_margin_probs:
-                    prec.update_probs_sfx(out, labels.cuda(), report_pca=True, num_classes=3)
+                    prec.update_probs_sfx(probs, labels.cuda(), report_pca=True, num_classes=3)
                 else:
                     prec.update_probs_crf(out, labels.cuda(), report_pca=True, num_classes=3)
             else:
-                prec.update_probs_sfx(out, labels.cuda())
+                prec.update_probs_sfx(out, labels.cuda(), report_pca=True, num_classes=3)
 
             visualize_crf_preds(out, pure_nr_frames, data, video_names, labels)
             # best_scores, best_lengths, best_out, best_t, best_times = keep_cleanest_video(out, labels, best_scores,
@@ -159,7 +159,7 @@ def test(**kwargs):
                     'pr@1/%s' % mode.upper(): prec.top1()
                 })
     # if not opt.mmargin_loss:
-    logger.debug('Val Acc: %f' % prec.top1(report_pca=False))
+    logger.debug('Epoch %d Val Acc: %f' % (epoch, prec.top1(report_pca=True)))
     # acc_t = torch.Tensor([prec.lab_class[0]['correct']/prec.lab_class[0]['total'],
     #                     prec.lab_class[1]['correct']/prec.lab_class[1]['total'],
     #                     prec.lab_class[2]['correct']/prec.lab_class[2]['total']])
@@ -224,68 +224,6 @@ def write_vis_meta_to_csv(vis_meta):
         dict_writer.writerows(vis_meta)
 
 
-def plot_scores(scores, times, t, video_name):
-    scatter_points = torch.max(scores, dim=1)
-    scatter_points_colors = list(
-        map(lambda i: 'green' if i == 0 else ('yellow' if i == 1 else 'red'), scatter_points[1]))
-    scatter_points = scatter_points[0].detach().cpu().numpy()
-    scores = torch.t(scores)
-    nrm_cnf = scores[0].detach().cpu().numpy()
-    trn_cnf = scores[1].detach().cpu().numpy()
-    unrm_cnf = scores[2].detach().cpu().numpy()
-
-    times = ''.join([item for sublist in times for item in sublist]).split('~')
-    times = [float(elm) for elm in times[:-1]]
-    x = [round((a + b) / 2, 2) for a, b in zip(times[0::2], times[1::2])]
-    x_intp = np.linspace(min(x), max(x), 500)
-
-    f_n = interp1d(x, nrm_cnf, kind='linear')
-    nrm_cnf = f_n(x_intp)
-    nrm_cnf[nrm_cnf < 0] = 0
-
-    f_t = interp1d(x, trn_cnf, kind='linear')
-    trn_cnf = f_t(x_intp)
-    trn_cnf[trn_cnf < 0] = 0
-
-    f_u = interp1d(x, unrm_cnf, kind='linear')
-    unrm_cnf = f_u(x_intp)
-    unrm_cnf[unrm_cnf < 0] = 0
-
-    # plt.figure(num=None, figsize=(3, 1))
-    plt.plot(x_intp, nrm_cnf, lw=1, color='#61c46e')
-    plt.fill_between(x_intp, 0, nrm_cnf, alpha=0.3, facecolor='#61c46e')
-    plt.plot(x_intp, trn_cnf, lw=1, color='#f6ed22')
-    plt.fill_between(x_intp, 0, trn_cnf, alpha=0.3, facecolor='#f6ed22')
-    plt.plot(x_intp, unrm_cnf, lw=1, color='#f15a24')
-    plt.fill_between(x_intp, 0, unrm_cnf, alpha=0.3, facecolor='#f15a24')
-    plt.scatter(x, scatter_points, marker='o', linewidths=0.5, s=10, c=scatter_points_colors)
-    plt.axvline(x=t)
-    plt.axis('equal')
-    plt.ylim(0, 1)
-    plt.xlabel('Time (sec)')
-    plt.ylabel('Prediction confidence')
-    plt.axis('off')
-    plt.savefig(os.path.join(vis_path_plot, video_name + '.svg'), bbox_inches='tight', pad_inches=0, dpi=1000)
-    plt.clf()
-    # plt.legend(['Intentional', 'Transitional', 'Unintentional'], loc='lower right')
-    # plt.show()
-    # f = interp1d(x, trn_cnf, kind='quadratic')
-    # trn_cnf = f(x)
-    #
-    # plt.plot(x, nrm_cnf, lw=1, color='#61c46e')
-    # plt.fill_between(x, 0, nrm_cnf, alpha=0.3, facecolor='#61c46e')
-    # plt.plot(x, trn_cnf, lw=1, color='#f6ed22')
-    # plt.fill_between(x, 0, trn_cnf, alpha=0.3, facecolor='#f6ed22')
-    # plt.plot(x, unrm_cnf, lw=1, color='#f15a24')
-    # plt.fill_between(x, 0, unrm_cnf, alpha=0.3, facecolor='#f15a24')
-    # plt.axvline(x=t)
-    # plt.xlabel('Time (sec)')
-    # plt.ylabel('Prediction confidence')
-    # plt.show()
-
-    return x
-
-
 def keep_cleanest_video(outs, labels, best_scores, best_lengths, pnfs, best_out, batch, best_t, best_times,
                         vis_metadata):
     for idx, pnf in enumerate(pnfs):
@@ -335,29 +273,45 @@ def keep_relevant_outs(out, data, outputs):
     rel_t = data['rel_t']
     times = data['times']
     times = ''.join([item for sublist in times for item in sublist]).split('~')
+    pnfs = data['pure_nr_frames'].permute(1, 0)
+    pnfs = pnfs[0]
     # times = times.split('~')
-    # video_names = data['video_name']
+    video_names = data['video_name']
+    # vid_idx = []
+    # for indx, pnf in zip(video_indexes, pnfs):
+    #     ind = [indx.item()] * int(pnf.item())
+    #     vid_idx.extend(ind)
+    # video_indexes = torch.tensor(vid_idx)
     for idx, video_idx in enumerate(video_indexes):
-        o = out[idx]
-        # o = torch.softmax(o, dim=0)
         # if torch.argmax(o) != 1:
         #     continue
-        if video_idx.item() not in outputs.keys():
-            outputs[video_idx.item()] = {'time': torch.stack([t[0][idx], t[1][idx], t[2][idx]]),
-                                         'rel_time': torch.stack([rel_t[0][idx], rel_t[1][idx], rel_t[2][idx]]),
-                                         'clips': [{'confidence': o[1],
-                                                    'f_time': (float(times[idx * 2]) + float(times[idx * 2 + 1])) / 2}],
-                                         'video_name': video_idx[idx]}
-        else:
-            outputs[video_idx.item()]['clips'].append(
-                {'confidence': o, 'f_time': (float(times[idx * 2]) + float(times[idx * 2 + 1])) / 2})
-
+        # video_times = times[idx]
+        # video_times = video_times.split('~')
+        # video_times = video_times[:-1]
+        start_idx = int(torch.sum(pnfs[:idx]).item())
+        end_idx = int(torch.sum(pnfs[:idx+1]).item())
+        for i in range(start_idx, end_idx):
+            o = out[i]
+            o = torch.softmax(o, dim=0)
+            try:
+                if video_idx.item() not in outputs.keys():
+                    outputs[video_idx.item()] = {'time': torch.stack([t[0][idx], t[1][idx], t[2][idx]]),
+                                                 'rel_time': torch.stack([rel_t[0][idx], rel_t[1][idx], rel_t[2][idx]]),
+                                                 'clips': [{'confidence': o[1],
+                                                            'f_time': (float(times[i * 2]) + float(times[i * 2 + 1])) / 2}],
+                                                 'video_name': video_idx.item()}
+                else:
+                    outputs[video_idx.item()]['clips'].append(
+                        {'confidence': o[1], 'f_time': (float(times[i * 2]) + float(times[i * 2 + 1])) / 2})
+            except Exception:
+                print('here')
     return outputs
 
 
 def calc_acc(outs):
     total = 0
-    correct = 0
+    correct_tf = 0
+    correct_one = 0
     print(len(list(outs.keys())))
     best_for_vis = None
     worst_for_vis = None
@@ -381,17 +335,122 @@ def calc_acc(outs):
         # if abs(f_time - time) <= 1:
         #     correct += 1
         # # else:
-        if min(abs(f_time - t) for t in time) <= 0.25:
+        if min(abs(f_time - t) for t in time) <= 1:
             if best_for_vis is None and 20 > len(clips) > 15:
                 best_for_vis = {'video_name': value['video_name'], 'g_trn': time.mean(), 'p_trn': f_time}
             # else:
             #     if min(abs(f_time - t) for t in time) < abs(best_for_vis['g_trn'].item() - best_for_vis['p_trn']):
             #         t_idx = torch.argmin(torch.abs(time - f_time))
             #         best_for_vis = {'video_name': value['video_name'], 'g_trn': time[t_idx], 'p_trn': f_time}
-            correct += 1
+            correct_one += 1
         else:
             if worst_for_vis is None and 1 < abs(f_time - time.mean()) < 1.5:
                 worst_for_vis = {'video_name': value['video_name'], 'g_trn': time.mean(), 'p_trn': f_time}
 
+        if min(abs(f_time - t) for t in time) <= 0.25:
+            correct_tf += 1
+
     print(best_for_vis)
-    print('Acc Val: %f' % (correct / total))
+    print('Acc Val 0.25: %f' % (correct_tf / total))
+    print('Acc Val 1.00: %f' % (correct_one / total))
+
+
+def plot_scores(scores, times, video_name):
+    scatter_points = torch.max(scores, dim=1)
+    scatter_points_colors = list(
+        map(lambda i: 'green' if i == 0 else ('yellow' if i == 1 else 'red'), scatter_points[1]))
+    scatter_points = scatter_points[0].detach().cpu().numpy()
+    scores = torch.t(scores)
+    nrm_cnf = scores[0].detach().cpu().numpy()
+    trn_cnf = scores[1].detach().cpu().numpy()
+    unrm_cnf = scores[2].detach().cpu().numpy()
+
+    # times = ''.join([item for sublist in times for item in sublist]).split('~')
+    # times = [float(elm) for elm in times[:-1]]
+    # x = [round((a + b) / 2, 2) for a, b in zip(times[0::2], times[1::2])]
+    x = [round(a, 2) for a in times]
+    x_intp = np.linspace(min(x), max(x), 500)
+
+    f_n = interp1d(x, nrm_cnf, kind='linear')
+    nrm_cnf = f_n(x_intp)
+    nrm_cnf[nrm_cnf < 0] = 0
+
+    f_t = interp1d(x, trn_cnf, kind='linear')
+    trn_cnf = f_t(x_intp)
+    trn_cnf[trn_cnf < 0] = 0
+
+    f_u = interp1d(x, unrm_cnf, kind='linear')
+    unrm_cnf = f_u(x_intp)
+    unrm_cnf[unrm_cnf < 0] = 0
+
+    # plt.figure(num=None, figsize=(3, 1))
+    plt.plot(x_intp, nrm_cnf, lw=1, color='#61c46e')
+    plt.fill_between(x_intp, 0, nrm_cnf, alpha=0.3, facecolor='#61c46e')
+    plt.plot(x_intp, trn_cnf, lw=1, color='#f6ed22')
+    plt.fill_between(x_intp, 0, trn_cnf, alpha=0.3, facecolor='#f6ed22')
+    plt.plot(x_intp, unrm_cnf, lw=1, color='#f15a24')
+    plt.fill_between(x_intp, 0, unrm_cnf, alpha=0.3, facecolor='#f15a24')
+    plt.scatter(x, scatter_points, marker='o', linewidths=0.5, s=10, c=scatter_points_colors)
+    # plt.axvline(x=t)
+    plt.axis('equal')
+    plt.ylim(0, 1)
+    plt.xlabel('Time (sec)')
+    plt.ylabel('Prediction confidence')
+    plt.axis('off')
+    plt.savefig(os.path.join(vis_path_plot, video_name + '.svg'), bbox_inches='tight', pad_inches=0, dpi=1000)
+    plt.clf()
+    # plt.legend(['Intentional', 'Transitional', 'Unintentional'], loc='lower right')
+    # plt.show()
+    # f = interp1d(x, trn_cnf, kind='quadratic')
+    # trn_cnf = f(x)
+    #
+    # plt.plot(x, nrm_cnf, lw=1, color='#61c46e')
+    # plt.fill_between(x, 0, nrm_cnf, alpha=0.3, facecolor='#61c46e')
+    # plt.plot(x, trn_cnf, lw=1, color='#f6ed22')
+    # plt.fill_between(x, 0, trn_cnf, alpha=0.3, facecolor='#f6ed22')
+    # plt.plot(x, unrm_cnf, lw=1, color='#f15a24')
+    # plt.fill_between(x, 0, unrm_cnf, alpha=0.3, facecolor='#f15a24')
+    # plt.axvline(x=t)
+    # plt.xlabel('Time (sec)')
+    # plt.ylabel('Prediction confidence')
+    # plt.show()
+
+    return x
+
+import pandas as pd
+import json
+if __name__ == '__main__':
+    paths = [
+        '/BS/unintentional_actions/nobackup/oops/oops_dataset/oops_video/val/Are You Serious! - Throwback Thursday (September 2017) _ FailArmy64.mp4',
+        '/BS/unintentional_actions/nobackup/oops/oops_dataset/oops_video/val/Best Fails of the Year 2017 - Part 1 (December 2017) _ FailArmy12.mp4',
+        '/BS/unintentional_actions/nobackup/oops/oops_dataset/oops_video/val/Fails of the Week - Insult to Injury (January 2017) _ FailArmy1.mp4',
+        "/BS/unintentional_actions/nobackup/oops/oops_dataset/oops_video/val/Let's Get It!! - FailArmy After Dark (ep. 2)88.mp4",
+        "/BS/unintentional_actions/nobackup/oops/oops_dataset/oops_video/val/Funny School Fails Compilation _ 'School's Out' By FailArmy 20167.mp4",
+        "/BS/unintentional_actions/nobackup/oops/oops_dataset/oops_video/val/Break Yourself - Fails of the Week (September 2017) _ FailArmy15.mp4"
+    ]
+
+
+
+    with open('/BS/unintentional_actions/work/data/oops/epstain/results_-00001_016.json') as f:
+        preds = json.load(f)
+
+    pred_conf = []
+    times = []
+    for idx, pred in enumerate(preds):
+        path = pred['fn']
+        if path in paths:
+            conf = torch.tensor(pred['y_hat_vec'])
+            time = (pred['t_end'] - pred['t_start']) / 2 + pred['t_start']
+
+            pred_conf.append(conf)
+            times.append(time)
+        else:
+            if len(pred_conf) > 0:
+                path = preds[idx-1]['fn']
+                name_parts = path.split('/')
+                name = name_parts[-1]
+                name = name[:-4]
+                plot_scores(torch.stack(pred_conf), times, name)
+                pass
+            pred_conf = []
+            times = []

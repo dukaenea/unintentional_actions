@@ -206,8 +206,6 @@ class ROKDataset(Dataset):
         if w is None and h is None:
             logger.debug("Found corrupted video")
             return None
-        max_angle = math.pi / 16
-        angle = (random() * (max_angle * 2)) - max_angle
 
         height, width = self._get_output_dim(h, w)
         cmd = (
@@ -541,56 +539,72 @@ class ROKDataset(Dataset):
 
             dset = data['dataset']
 
-            speed_up_factor = randint(2, 3)
+            speed_up_factor = 3 # randint(2, 3)
             trn_idx = randint(0, 6)
             selected = False
+            nrm_video = self.split_video_in_clips(video, fpc)
+            # if nrm_video.shape[0] < 3:
+            #     continue
 
             if 'speed' in opt.transformation_groups:
-                # if trn_idx in [0, 1]:
-                if video.shape[0] > (fpc * speed_up_factor * 4):
-                    s_video = self.speed_up_video_clip_level(video, fpc, speed_up_factor)
-                    new_batch.append({'features': s_video,
-                                      'label': (4 if 'motion' in opt.transformation_groups else 0) + (
-                                                  speed_up_factor - 2), 'pure_nr_frames': s_video.shape[0],
-                                      'dset': dset})
-                        # selected = True
+                if trn_idx in [0, 1]:
+                    if video.shape[0] > (fpc * speed_up_factor * 4):
+                        s_video = self.speed_up_video_clip_level(video, fpc, speed_up_factor)
+                        new_batch.append({'features': s_video,
+                                          'label': 0, 'pure_nr_frames': s_video.shape[0],
+                                          'dset': dset})
+                        selected = True
 
-                # if not selected:
-                #     trn_idx = randint(2, 6)
+                if not selected:
+                    trn_idx = randint(2, 6)
 
                 nrm_video = self.split_video_in_clips(video, fpc)
-                new_batch.append({'features': nrm_video, 'label': 2 if 'motion' in opt.transformation_groups else 2,
+                new_batch.append({'features': nrm_video, 'label': 1 if 'motion' in opt.transformation_groups else 2,
                                   'pure_nr_frames': nrm_video.shape[0], 'dset': dset})
 
             if 'motion' in opt.transformation_groups:
 
                 # if trn_idx == 3:
-                class_idx = 3
+                class_idx = 2
                 if 'random_point_speedup' in opt.transformations_list:
                     class_idx += 1
                     if video.shape[0] > (fpc * speed_up_factor * 4):
                         st_video = self.stitch_half_speed_video(video, fpc, speed_up_factor)
                         new_batch.append({'features': st_video, 'label': class_idx, 'pure_nr_frames': st_video.shape[0], 'dset': dset})
-
+                # if trn_idx == 4:
                 if 'double_flip' in opt.transformations_list:
+                    class_idx = 3
                     foba_video = self.foba_video_in_clips(video, fpc)
                     new_batch.append({'features': foba_video, 'label': class_idx, 'pure_nr_frames': foba_video.shape[0], 'dset': dset})
                     class_idx += 1
 
+                # if trn_idx == 5:
                 if 'shuffle' in opt.transformations_list:
+                    class_idx = 4
                     sc_video = self.shuffle_video_clips(video, fpc)
                     new_batch.append({'features': sc_video, 'label': class_idx, 'pure_nr_frames': sc_video.shape[0], 'dset': dset})
                     class_idx += 1
 
+                # if trn_idx == 6:
                 if 'warp' in opt.transformations_list:
+                    class_idx = 5
                     sw_video = self.bisect_and_swap_video(video, fpc)
                     new_batch.append({'features': sw_video, 'label': class_idx, 'pure_nr_frames': sw_video.shape[0], 'dset': dset})
 
-
+        opt_len = 10
         max_len = max([s['features'].shape[0] for s in new_batch])
         for data in new_batch:
             if data['features'].shape[0] < max_len:
                 data['features'] = _zeropad(data['features'], max_len)
+
+        # min_len = min([s['features'].shape[0] for s in new_batch])
+        # for data in new_batch:
+        #     if data['features'].shape[0] > opt_len:
+        #         diff = data['features'].shape[0] - opt_len
+        #         start_idx = randint(0, diff)
+        #         data['features'] = data['features'][start_idx:start_idx+opt_len]
+        #     elif data['features'].shape[0] < opt_len:
+        #         data['features'] = _zeropad(data['features'], opt_len)
 
 
         return default_collate(new_batch)
