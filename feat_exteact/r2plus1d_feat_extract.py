@@ -38,7 +38,7 @@ def extract_r2plus1d_feats(dataset_name, mode):
     with torch.no_grad():
         for idx, data in enumerate(tqdm(dataloader)):
             frames = data['features']
-            # print(frames.shape)
+
             # use the number of clips as the batch size to feed to r2+1d
             output = model(frames[0].cuda())
             # if idx % 10 != 0:
