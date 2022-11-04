@@ -32,7 +32,9 @@ general:
   gpu_parallel: true
   backbone_lr_factor: 1
   cos_decay_lr_factor: 0.01
-  pretrained: false
+  pretrained: true
+#  storage: '/BS/feature_bank/work/enea'
+#  log_save_dir: '/BS/feature_bank/work/enea/logging'
 longformer:
   embed_dim: 768
   max_positions_embedding: 7200
@@ -52,7 +54,7 @@ longformer:
   mlp_dim: 1024
   num_classes: 3
   num_classes_ptr: 7
-  vtn_ptr_path: '/BS/feature_bank/work/enea/models/all/VideoLongformer/val/top1/VideoLongformer___v0.4157_ep63.pth.tar'
+  vtn_ptr_path: '/BS/unintentional_actions/work/storage/models/all/VideoLongformer/all.rep_learning.tag:speedx3.layers3.attn_win32.classes6.time20220307-113444/val/top1/VideoLongformer__all.rep_learning.tag:speedx3.layers3.attn_win32.classes6.time20220307-113444_v0.5592_ep55.pth.tar'
   use_crf: false
   crf_margin_probs: false
   spat_temp: false
@@ -62,7 +64,7 @@ representation_learning:
   rep_data_level: 'features'
   rep_backbone: 'vit'
   speed_and_motion: true
-  tag: 'shuffle'
+  tag: 'speedx4'
   transformation_groups: 'speed&motion'
 train:
   test: true

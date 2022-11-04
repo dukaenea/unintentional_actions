@@ -5,7 +5,7 @@ oops:
   fails_path: '/BS/unintentional_actions/nobackup/oops/oops_dataset/oops_video'
   fails_only: true
   workers: 32
-  all_fail_videos: false
+  all_fail_videos: true
   cache_dataset: true
   fails_action_split: false
   balance_fails_only: false
@@ -25,14 +25,15 @@ oops:
   selfsup_loss: 'None'
   load_videos: true
 general:
-  model_name: 'VideoLongformer_Rebuttal'
+  model_name: 'VideoLongformer'
   sfx: ''
   pfx: ''
   crt_weight_training: false
   gpu_parallel: true
   backbone_lr_factor: 1
   cos_decay_lr_factor: 0.01
-  pretrained: false
+  pretrained: true
+  backbone: 'vit_longformer'
 longformer:
   embed_dim: 768
   max_positions_embedding: 7200
@@ -50,25 +51,32 @@ longformer:
   hidden_dim: 768
   mlp_dropout: 0.2
   mlp_dim: 1024
-  num_classes: 3
+  num_classes: 6
   num_classes_ptr: 7
-  vtn_ptr_path: '/BS/feature_bank/work/enea/models/all/VideoLongformer/val/top1/VideoLongformer___v0.4157_ep63.pth.tar'
-  use_crf: false
-  crf_margin_probs: false
+  vtn_ptr_path: '/BS/unintentional_actions/work/storage/models/all/VideoLongformer/all.rep_learning.tag:double_flip.layers3.attn_win32.classes7.time20220128-101141/val/top1/VideoLongformer__all.rep_learning.tag:double_flip.layers3.attn_win32.classes7.time20220128-101141_v0.6470_ep71.pth.tar'
+  use_crf: true
   spat_temp: false
-  multi_scale: false
+  multi_scale: true
 representation_learning:
-  dataset: 'oops'
+  dataset: 'all'
   rep_data_level: 'features'
   rep_backbone: 'vit'
   speed_and_motion: true
-  tag: 'shuffle'
+  tag: 'double_flip_stage3'
   transformation_groups: 'speed&motion'
+  transformations_list:
+    -'normal'
+    -'speedx2'
+    -'speedx3'
+    -'speedx4'
+    -'random_point_speedup'
+    -'shuffle'
+    -'warp'
 train:
   test: true
   save_model: 1
   test_val: true
-  epochs: 50
+  epochs: 100
   use_tqdm: true
   contrastive_loss: false
   rep_learning: true
@@ -76,7 +84,7 @@ train:
   lr: 0.0001
   weight_decay: 0.0001
   test_freq: 1
-  batch_size: 256
+  batch_size: 16
   num_workers: 32
 
 vizdom:
