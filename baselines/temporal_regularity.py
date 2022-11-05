@@ -62,8 +62,6 @@ def train(**kwargs):
                              time_id=tst)
 
         if opt.save_model and epoch % opt.save_model == 0 and check_val:
-            # print(model_saver.eval)
-            # print()
             if model_saver.check(check_val):
                 save_dict = {'epoch': epoch,
                              'state_dict': copy.deepcopy(model.state_dict()),
@@ -71,23 +69,6 @@ def train(**kwargs):
                 model_saver.update(check_val, save_dict, epoch)
 
             model_saver.save()
-        # if epoch == -1:
-        #     min_train_loss = epoch_loss
-        #
-        #     filelist = [f for f in os.listdir(project_storage_path) if f.endswith(".pth")]
-        #     for f in filelist:
-        #         os.remove(os.path.join(project_storage_path, f))
-        #     torch.save(model.state_dict(),
-        #                project_storage_path + '%s_%s.pth' % (str(time.time()), str(min_train_loss.item())))
-
-        # print('Epoch: %d ===== Loss: %f' % (epoch, epoch_loss))
-        # tboard_writer.add_scalar('training_loss', epoch_loss, epoch)
-        #
-        # if epoch != 0 and epoch % 400 == 0:
-        #     adjust_lr(optimizer, lr, 0.1)
-        # if epoch % 10 == 0:
-        #     test(model=model,
-        #          dataloader=kwargs['test_dataloader'])
 
 
 def plot_reg_scores(reg_scores, anom_segments=None, scatter=False):

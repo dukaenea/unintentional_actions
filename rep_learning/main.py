@@ -2,7 +2,7 @@
 # @Date: 5/3/21
 import sys
 
-sys.path.append('/BS/unintentional_actions/work/unintentional_actions')
+sys.path.append("/BS/unintentional_actions/work/unintentional_actions")
 import os
 import argparse
 import time
@@ -12,6 +12,7 @@ from dataloaders.rareacts_loader import RareactsDataset
 from dataloaders.ucf_crime_video_loader import UCFCrimeVideoLoader
 from torch.utils.data import DataLoader
 from tqdm import tqdm
+
 # from models.pm_vtn import create_model, get_froze_trn_optimizer
 from models.pm_vtn import create_model
 from models.res3d_18 import create_r3d
@@ -30,7 +31,6 @@ from rep_learning.feat_transformer import fast_forward
 from dataloaders.ucf_crime_video_loader import UCFCrimeVideoLoader
 from models.pm_vtn import MILRegLoss
 from dataloaders.ucf_crime_loader import get_crime_video_loader
-
 
 
 def learn_representation():
@@ -92,9 +92,17 @@ def learn_representation():
     # opt.test = True
     # opt.num_workers = 16
     # opt.batch_size = 1
-    opt.sfx = str('%s.rep_learning.tag:%s.layers%d.attn_win%d.classes%d_rok_class_per_trn.task_%s' % (
-    opt.dataset, opt.tag, opt.num_hidden_layers,
-    opt.attention_window[0], opt.num_classes, opt.task))
+    opt.sfx = str(
+        "%s.rep_learning.tag:%s.layers%d.attn_win%d.classes%d_rok_class_per_trn.task_%s"
+        % (
+            opt.dataset,
+            opt.tag,
+            opt.num_hidden_layers,
+            opt.attention_window[0],
+            opt.num_classes,
+            opt.task,
+        )
+    )
     # opt.save_model = 1
     # opt.test_val = True
     # opt.epochs = 100
@@ -117,10 +125,23 @@ def learn_representation():
     # opt.weight_decay = 1e-4
     # opt.test_freq = 1
     # opt.save_model = 1
-    opt.viz_env = '%s.%s%s_%s.' % (opt.model_name, opt.temp_learning_dataset_name, opt.env_pref, opt.sfx)
-    opt.sfx = str('%s.rep_learning.tag:%s.layers%d.attn_win%d.classes%d.time%s' % (
-        opt.dataset, opt.tag, opt.num_hidden_layers, opt.attention_window[0], opt.num_classes,
-        datetime.now().strftime('%Y%m%d-%H%M%S')))
+    opt.viz_env = "%s.%s%s_%s." % (
+        opt.model_name,
+        opt.temp_learning_dataset_name,
+        opt.env_pref,
+        opt.sfx,
+    )
+    opt.sfx = str(
+        "%s.rep_learning.tag:%s.layers%d.attn_win%d.classes%d.time%s"
+        % (
+            opt.dataset,
+            opt.tag,
+            opt.num_hidden_layers,
+            opt.attention_window[0],
+            opt.num_classes,
+            datetime.now().strftime("%Y%m%d-%H%M%S"),
+        )
+    )
     #
     # opt.debug = False
     #
@@ -134,55 +155,98 @@ def learn_representation():
     setup_logger_path()
 
     train_set, val_set, test_set = None, None, None
-    if opt.dataset == 'kinetics':
-        train_set = KineticsDataset('train', fps=25, fpc=32, spat_crop=True, hflip=False,
-                                        norm_statistics={'mean': [0.43216, 0.394666, 0.37645],
-                                                         'std': [0.22803, 0.22145, 0.216989]},
-                                    feat_ext=True, data_level=opt.rep_data_level,
-                                    feat_set='%s_feats' % opt.rep_backbone)
-        val_set = KineticsDataset('val', fps=25, fpc=32, spat_crop=True, hflip=False,
-                                  norm_statistics={'mean': [0.43216, 0.394666, 0.37645],
-                                                   'std': [0.22803, 0.22145, 0.216989]},
-                                  feat_ext=True, data_level=opt.rep_data_level, feat_set='%s_feats' % opt.rep_backbone)
-    elif opt.dataset == 'rareact':
+    if opt.dataset == "kinetics":
+        train_set = KineticsDataset(
+            "train",
+            fps=25,
+            fpc=32,
+            spat_crop=True,
+            hflip=False,
+            norm_statistics={
+                "mean": [0.43216, 0.394666, 0.37645],
+                "std": [0.22803, 0.22145, 0.216989],
+            },
+            feat_ext=True,
+            data_level=opt.rep_data_level,
+            feat_set="%s_feats" % opt.rep_backbone,
+        )
+        val_set = KineticsDataset(
+            "val",
+            fps=25,
+            fpc=32,
+            spat_crop=True,
+            hflip=False,
+            norm_statistics={
+                "mean": [0.43216, 0.394666, 0.37645],
+                "std": [0.22803, 0.22145, 0.216989],
+            },
+            feat_ext=True,
+            data_level=opt.rep_data_level,
+            feat_set="%s_feats" % opt.rep_backbone,
+        )
+    elif opt.dataset == "rareact":
         pass
-    elif opt.dataset == 'oops':
+    elif opt.dataset == "oops":
         pass
-    elif opt.dataset == 'all':
-        train_set = ROKDataset('train', spat_scale=True, size=224, spat_crop=True, load_frames=True if opt.backbone=='r3d_18' else False)
-        val_set = ROKDataset('val', spat_scale=True, size=224, spat_crop=True, load_frames=True if opt.backbone=='r3d_18' else False)
-    elif opt.dataset == 'ucf_crime':
-        train_set = UCFCrimeVideoLoader('train', load_frames=False)
-        val_set = UCFCrimeVideoLoader('val', load_frames=False)
+    elif opt.dataset == "all":
+        train_set = ROKDataset(
+            "train",
+            spat_scale=True,
+            size=224,
+            spat_crop=True,
+            load_frames=True if opt.backbone == "r3d_18" else False,
+        )
+        val_set = ROKDataset(
+            "val",
+            spat_scale=True,
+            size=224,
+            spat_crop=True,
+            load_frames=True if opt.backbone == "r3d_18" else False,
+        )
+    elif opt.dataset == "ucf_crime":
+        train_set = UCFCrimeVideoLoader("train", load_frames=False)
+        val_set = UCFCrimeVideoLoader("val", load_frames=False)
 
-    if opt.dataset == 'all':
-        train_loader = DataLoader(train_set,
-                                  num_workers=opt.num_workers,
-                                  batch_size=opt.batch_size,
-                                  shuffle=True,
-                                  drop_last=True,
-                                  collate_fn=train_set.speed_and_motion_collate_fn if not opt.multi_scale else train_set.video_level_speed_and_motion_collate_fn)
+    if opt.dataset == "all":
+        train_loader = DataLoader(
+            train_set,
+            num_workers=opt.num_workers,
+            batch_size=opt.batch_size,
+            shuffle=True,
+            drop_last=True,
+            collate_fn=train_set.speed_and_motion_collate_fn
+            if not opt.multi_scale
+            else train_set.video_level_speed_and_motion_collate_fn,
+        )
 
-        val_loader = DataLoader(val_set,
-                                num_workers=opt.num_workers,
-                                batch_size=opt.batch_size,
-                                shuffle=False,
-                                drop_last=True,
-                                collate_fn=val_set.speed_and_motion_collate_fn if not opt.multi_scale else train_set.video_level_speed_and_motion_collate_fn)
+        val_loader = DataLoader(
+            val_set,
+            num_workers=opt.num_workers,
+            batch_size=opt.batch_size,
+            shuffle=False,
+            drop_last=True,
+            collate_fn=val_set.speed_and_motion_collate_fn
+            if not opt.multi_scale
+            else train_set.video_level_speed_and_motion_collate_fn,
+        )
     else:
-        train_loader = DataLoader(train_set,
-                                  num_workers=opt.num_workers,
-                                  batch_size=opt.batch_size,
-                                  shuffle=False if opt.debug else True,
-                                  drop_last=True,
-                                  collate_fn=train_set._rep_lrn_collate_fn)
+        train_loader = DataLoader(
+            train_set,
+            num_workers=opt.num_workers,
+            batch_size=opt.batch_size,
+            shuffle=False if opt.debug else True,
+            drop_last=True,
+            collate_fn=train_set._rep_lrn_collate_fn,
+        )
 
-        val_loader = DataLoader(val_set,
-                                num_workers=opt.num_workers,
-                                batch_size=opt.batch_size,
-                                shuffle=False if opt.debug else True,
-                                drop_last=True,
-                                collate_fn=val_set._rep_lrn_collate_fn)
+        val_loader = DataLoader(
+            val_set,
+            num_workers=opt.num_workers,
+            batch_size=opt.batch_size,
+            shuffle=False if opt.debug else True,
+            drop_last=True,
+            collate_fn=val_set._rep_lrn_collate_fn,
+        )
 
     # train_loader = get_anomaly_loader('avenue', 32, 1/25, 25, load_videos=True, val=False, load_frames=True)
     # val_loader = get_anomaly_loader('avenue', 32, 1/25, 25, load_videos=True, val=True, load_frames=True)
@@ -207,11 +271,15 @@ def learn_representation():
     #                         drop_last=False,
     #                         collate_fn=val_set._rep_lrn_collate_fn)
     if opt.multi_scale:
-        model, optimizer, loss = create_model_trn_2x(opt.num_classes, pretrained=opt.pretrained, pretrain_scale='frame')
+        model, optimizer, loss = create_model_trn_2x(
+            opt.num_classes, pretrained=opt.pretrained, pretrain_scale="frame"
+        )
     else:
-        if opt.backbone == 'vit_longformer':
-            model, optimizer, loss = create_model(opt.num_classes, pretrained=opt.pretrained)
-        elif opt.backbone == 'r3d_18':
+        if opt.backbone == "vit_longformer":
+            model, optimizer, loss = create_model(
+                opt.num_classes, pretrained=opt.pretrained
+            )
+        elif opt.backbone == "r3d_18":
             model, optimizer, loss = create_r3d(pretrained=opt.pretrained)
     # feat_extractor = build_resnet_50()
 
@@ -238,28 +306,22 @@ def learn_representation():
     # val_loader_class = get_video_loader(opt)
     # opt.batch_size = 32
 
-    train(model=model,
-          train_loader=train_loader,
-          val_loader=val_loader,
-          optimizer=optimizer,
-          loss=loss,
-          test_freq=1,
-          epochs=25,
-          train_set=train_set,
-          epoch=epoch)
+    train(
+        model=model,
+        train_loader=train_loader,
+        val_loader=val_loader,
+        optimizer=optimizer,
+        loss=loss,
+        test_freq=1,
+        epochs=25,
+        train_set=train_set,
+        epoch=epoch,
+    )
 
     return
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     warnings.filterwarnings("ignore")
-    # os.environ['CUDA_VISIBLE_DEVICES'] = '0'
-    # os.environ['CUDA_VISIBLE_DEVICES'] = '2'
-    # loss = torch.nn.CrossEntropyLoss()
-    # label = torch.tensor([1])
-    # prediction = torch.tensor([[10.0, 0, 20.0]])
-    # prediction = torch.softmax(prediction, dim=1)
-    # a = loss(prediction, label)
-    # print(a)
 
     learn_representation()
