@@ -1,4 +1,3 @@
-
 # @Author: Enea Duka
 # @Date: 6/13/21
 
@@ -33,7 +32,7 @@ class ROKDataset(Dataset):
         self.spat_scale = spat_scale
         self.size = size
         self.spat_crop = spat_crop
-        self.dset_to_idx = {'kinetics': 0, 'oops': 1, 'rareact': 2}
+        self.dset_to_idx = {"kinetics": 0, "oops": 1, "rareact": 2}
         self.load_frames = load_frames
         self.norm = Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
 
@@ -42,69 +41,89 @@ class ROKDataset(Dataset):
         # if opt.run_on_mpg:
         #     self.csv_path = '/u/eneaduka/data/oops/splits/%s_all_org.csv' % mode
         # else:
-        self.csv_path = '/BS/unintentional_actions/work/data/oops/splits/%s_all_org.csv' % mode
+        self.csv_path = (
+            "/BS/unintentional_actions/work/data/oops/splits/%s_all_org.csv" % mode
+        )
         # self.csv_path = '/BS/unintentional_actions/work/data/rok/data_splits/%s_rep_lrn_kin.csv' % mode
 
         if load_frames:
             # if opt.run_on_mpg:
             #     self.oops_video_path = '/u/eneaduka/datasets/oops/oops_dataset/oops_video/%s' % mode
             # else:
-            self.oops_video_path = '/BS/unintentional_actions/nobackup/oops/oops_dataset/oops_video/%s_downsize' % mode
+            self.oops_video_path = (
+                "/BS/unintentional_actions/nobackup/oops/oops_dataset/oops_video/%s_downsize"
+                % mode
+            )
         else:
-            self.kinetics_video_path = '/BS/unintentional_actions/work/data/kinetics/vit_features/%s' % mode
+            self.kinetics_video_path = (
+                "/BS/unintentional_actions/work/data/kinetics/vit_features/%s" % mode
+            )
             # if opt.run_on_mpg:
             #     self.oops_video_path = '/u/eneaduka/datasets/oops/vit_features/%s_all' % mode
             #     self.oops_video_path_labeld = '/u/eneaduka/data/oops/vit_features/%s_normalised' % mode
             # else:
-            self.oops_video_path = '/BS/unintentional_actions/work/data/oops/vit_features/%s_all' % mode
-            self.oops_video_path_labeld = '/BS/unintentional_actions/work/data/oops/vit_features/%s_normalised' % mode
-            self.rareact_video_path = '//BS/unintentional_actions/work/data/rareact/vit_features/positive_negative/%s' % mode
+            self.oops_video_path = (
+                "/BS/unintentional_actions/work/data/oops/vit_features/%s_all" % mode
+            )
+            self.oops_video_path_labeld = (
+                "/BS/unintentional_actions/work/data/oops/vit_features/%s_normalised"
+                % mode
+            )
+            self.rareact_video_path = (
+                "//BS/unintentional_actions/work/data/rareact/vit_features/positive_negative/%s"
+                % mode
+            )
 
         self.csv = pd.read_csv(self.csv_path)
 
-        if opt.backbone == 'r3d_18':
-            normalize = T.Normalize(mean=[0.43216, 0.394666, 0.37645],
-                                    std=[0.22803, 0.22145, 0.216989])
-            unnormalize = T.Unnormalize(mean=[0.43216, 0.394666, 0.37645],
-                                        std=[0.22803, 0.22145, 0.216989])
+        if opt.backbone == "r3d_18":
+            normalize = T.Normalize(
+                mean=[0.43216, 0.394666, 0.37645], std=[0.22803, 0.22145, 0.216989]
+            )
+            unnormalize = T.Unnormalize(
+                mean=[0.43216, 0.394666, 0.37645], std=[0.22803, 0.22145, 0.216989]
+            )
 
-            self.train_transform = torchvision.transforms.Compose([
-                T.ToFloatTensorInZeroOne(),
-                T.Resize((128, 171)),
-                T.RandomHorizontalFlip(),
-                normalize,
-                T.RandomCrop((112, 112))
-            ])
-            self.test_transform = torchvision.transforms.Compose([
-                T.ToFloatTensorInZeroOne(),
-                T.Resize((128, 171)),
-                normalize,
-                T.CenterCrop((112, 112))
-            ])
+            self.train_transform = torchvision.transforms.Compose(
+                [
+                    T.ToFloatTensorInZeroOne(),
+                    T.Resize((128, 171)),
+                    T.RandomHorizontalFlip(),
+                    normalize,
+                    T.RandomCrop((112, 112)),
+                ]
+            )
+            self.test_transform = torchvision.transforms.Compose(
+                [
+                    T.ToFloatTensorInZeroOne(),
+                    T.Resize((128, 171)),
+                    normalize,
+                    T.CenterCrop((112, 112)),
+                ]
+            )
 
-        elif opt.backbone == 'vit_longformer':
-            normalize = T.Normalize(mean=[0.5, 0.5, 0.5],
-                                    std=[0.5, 0.5, 0.5])
-            unnormalize = T.Unnormalize(mean=[0.5, 0.5, 0.5],
-                                        std=[0.5, 0.5, 0.5])
-            self.train_transform = torchvision.transforms.Compose([
-                T.ToFloatTensorInZeroOne(),
-                normalize
-            ])
-            self.test_transform = torchvision.transforms.Compose([
-                T.ToFloatTensorInZeroOne(),
-                T.Resize((int(224 * 4))),
-                T.CenterCrop((224, 224)),
-                normalize,
-            ])
+        elif opt.backbone == "vit_longformer":
+            normalize = T.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
+            unnormalize = T.Unnormalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
+            self.train_transform = torchvision.transforms.Compose(
+                [T.ToFloatTensorInZeroOne(), normalize]
+            )
+            self.test_transform = torchvision.transforms.Compose(
+                [
+                    T.ToFloatTensorInZeroOne(),
+                    T.Resize((int(224 * 4))),
+                    T.CenterCrop((224, 224)),
+                    normalize,
+                ]
+            )
 
-        if 'normal' not in opt.transformations_list:
+        if "normal" not in opt.transformations_list:
             self.speeds = [1, 2, 3]
-        elif 'speedx2' not in opt.transformations_list:
+        elif "speedx2" not in opt.transformations_list:
             self.speeds = [0, 2, 3]
-        elif 'speedx3' not in opt.transformations_list:
+        elif "speedx3" not in opt.transformations_list:
             self.speeds = [0, 1, 3]
-        elif 'speedx4' not in opt.transformations_list:
+        elif "speedx4" not in opt.transformations_list:
             self.speeds = [0, 1, 2]
         else:
             self.speeds = [0, 1, 2, 3]
@@ -119,31 +138,46 @@ class ROKDataset(Dataset):
         # if idx < 3800:
         #     return {'features': torch.rand((128, 3, 112, 112)), 'dataset': 'oops'}
         # dset = self.csv['dataset'][idx]
-        dset = 'oops'
-        filename = self.csv['filename'][idx]
+        dset = "oops"
+        filename = self.csv["filename"][idx]
         # if dset == 'kinetics':
         #     video = self._load_video_features(self.kin_filename_to_path[filename])
         # else:
-        vid_path = pth.join(self.oops_video_path, filename) + ('.npz' if not self.load_frames else '.mp4')
+        vid_path = pth.join(self.oops_video_path, filename) + (
+            ".npz" if not self.load_frames else ".mp4"
+        )
         if not pth.isfile(vid_path):
             return None
-            vid_path = pth.join(self.oops_video_path_labeld, filename) + ('.mp4.npz' if not self.load_frames else '.mp4')
+            vid_path = pth.join(self.oops_video_path_labeld, filename) + (
+                ".mp4.npz" if not self.load_frames else ".mp4"
+            )
 
         # if not pth.isfile(vid_path):
         #     print('not_file')
 
-        video = self._load_video_features(vid_path) if not self.load_frames else self._load_video_frames(vid_path)
+        video = (
+            self._load_video_features(vid_path)
+            if not self.load_frames
+            else self._load_video_frames(vid_path)
+        )
         if video is None:
             idx = randint(0, len(self.csv))
-            filename = self.csv['filename'][idx]
+            filename = self.csv["filename"][idx]
 
-            vid_path = pth.join(self.oops_video_path, filename) + ('.npz' if not self.load_frames else '.mp4')
+            vid_path = pth.join(self.oops_video_path, filename) + (
+                ".npz" if not self.load_frames else ".mp4"
+            )
             if not pth.isfile(vid_path):
                 vid_path = pth.join(self.oops_video_path_labeld, filename) + (
-                    '.mp4.npz' if not self.load_frames else '.mp4')
+                    ".mp4.npz" if not self.load_frames else ".mp4"
+                )
             if not pth.isfile(vid_path):
-                print('here')
-            video = self._load_video_features(vid_path) if not self.load_frames else self._load_video_frames(vid_path)
+                print("here")
+            video = (
+                self._load_video_features(vid_path)
+                if not self.load_frames
+                else self._load_video_frames(vid_path)
+            )
         # video = self._load_video_features(pth.join(vid_path if dset == 'oops' else self.rareact_video_path, filename)+'.npz')
 
         # if video is None:
@@ -161,21 +195,28 @@ class ROKDataset(Dataset):
         #                 pth.join(self.oops_video_path if dset == 'oops' else self.rareact_video_path,
         #                          filename) + '.npz')
         #
-        if opt.backbone == 'r3d_18':
-            if self.mode == 'train':
+        if opt.backbone == "r3d_18":
+            if self.mode == "train":
                 video = self.train_transform(video)
-            elif self.mode == 'val':
+            elif self.mode == "val":
                 video = self.test_transform(video)
 
             video = video.permute(1, 0, 2, 3)
 
-        return {'features': video, 'dataset': dset}
+        return {"features": video, "dataset": dset}
 
     def _get_video_dim(self, video_path):
         try:
             probe = ffmpeg.probe(video_path)
-            video_stream = next((stream for stream in probe['streams'] if stream['codec_type'] == 'video'), None)
-            return int(video_stream['height']), int(video_stream['width'])
+            video_stream = next(
+                (
+                    stream
+                    for stream in probe["streams"]
+                    if stream["codec_type"] == "video"
+                ),
+                None,
+            )
+            return int(video_stream["height"]), int(video_stream["width"])
         except Exception as e:
             print(e)
             print(video_path)
@@ -208,11 +249,7 @@ class ROKDataset(Dataset):
             return None
 
         height, width = self._get_output_dim(h, w)
-        cmd = (
-            ffmpeg
-                .input(video_path)
-                .filter('scale', width, height)
-        )
+        cmd = ffmpeg.input(video_path).filter("scale", width, height)
 
         rt_rnd = random()
         # if self.mode == 'train' and rt_rnd < 0.8:
@@ -243,14 +280,12 @@ class ROKDataset(Dataset):
         #     cmd = cmd.hflip()
         #
 
-        out, _ = (
-            cmd.output('pipe:', format='rawvideo', pix_fmt='rgb24')
-                .run(capture_stdout=True, quiet=True)
+        out, _ = cmd.output("pipe:", format="rawvideo", pix_fmt="rgb24").run(
+            capture_stdout=True, quiet=True
         )
 
-
         video = np.frombuffer(out, np.uint8).reshape([-1, width, height, 3])
-        video = torch.from_numpy(video.astype('float32'))
+        video = torch.from_numpy(video.astype("float32"))
         video = video.permute(0, 3, 1, 2)
 
         # if self.mode == 'train':
@@ -275,14 +310,14 @@ class ROKDataset(Dataset):
     def _load_video_features(self, video_path):
         try:
             compressed_file = np.load(video_path)
-            array = compressed_file['arr_0']
+            array = compressed_file["arr_0"]
             video = torch.from_numpy(array)
         except Exception as e:
             print(e)
             return None
             # raise
         # if '.mp4' in video_path:
-            # print('Got labeled')
+        # print('Got labeled')
         return video
 
     def _get_kin_dict(self):
@@ -299,11 +334,11 @@ class ROKDataset(Dataset):
         try:
             max_start_pos = (vector.shape[0] - crop_size) // 2
             start_pos = randint(0, max_start_pos)
-            return vector[start_pos:start_pos + crop_size]
+            return vector[start_pos : start_pos + crop_size]
         except Exception:
             print(vector.shape[0])
             print(crop_size)
-            print('here')
+            print("here")
             if crop_size > vector.shape[0]:
                 return vector
             else:
@@ -317,11 +352,11 @@ class ROKDataset(Dataset):
         try:
             speed_label = randint(0, max_speed)
         except Exception:
-            print('')
+            print("")
         eff_skip = 2 ** speed_label
 
         # subsample the video
-        video, _ = fast_forward(video, eff_skip)['tensor']
+        video, _ = fast_forward(video, eff_skip)["tensor"]
         if video.shape[0] > min_seq_len:
             vid_idx = torch.arange(video.shape[0])
             crop_idx = self._random_crop_vector(vid_idx, min_seq_len)
@@ -344,11 +379,15 @@ class ROKDataset(Dataset):
         vid_len = video.shape[0]
 
         vid_idx = torch.arange(0, vid_len)
-        sub_len = min(vid_len, min_seq_len) #if eff_skip == 1 else (min_seq_len - 1) * eff_skip)
+        sub_len = min(
+            vid_len, min_seq_len
+        )  # if eff_skip == 1 else (min_seq_len - 1) * eff_skip)
         crop_idx = self._random_crop_vector(vid_idx, sub_len)
         video = video[crop_idx]
-        idxs = torch.arange(0, video.shape[0]) # torch.arange(0, (min_seq_len - 2) * eff_skip, step=eff_skip)
-        start = 0 # 1 if eff_skip > 1 else 0
+        idxs = torch.arange(
+            0, video.shape[0]
+        )  # torch.arange(0, (min_seq_len - 2) * eff_skip, step=eff_skip)
+        start = 0  # 1 if eff_skip > 1 else 0
         # rand_offset = randint(start, eff_skip + 1 - start)
         inds_foba = torch.cat([idxs, torch.flip(idxs, dims=(0,))], 0)
         inds_foba = self._random_crop_central_vector(inds_foba, min_seq_len)
@@ -363,7 +402,7 @@ class ROKDataset(Dataset):
             try:
                 video = video[inds_foba.type(torch.long), :]
             except Exception:
-                print('')
+                print("")
         return video
 
     def _twarp_video(self, video, max_speed, min_seq_len):
@@ -401,9 +440,8 @@ class ROKDataset(Dataset):
         min_start_idx = (vec_len // 2) - (crop_len - 2)
         max_start_idx = (vec_len // 2) - 2
 
-        start_idx = randint(min_start_idx, max_start_idx+1)
-        return vector[start_idx: start_idx + crop_len]
-
+        start_idx = randint(min_start_idx, max_start_idx + 1)
+        return vector[start_idx : start_idx + crop_len]
 
     # def _crop_video_temporally_controlled(self, video, min_seq_len):
     #     video_len = video.shape[0]
@@ -411,21 +449,19 @@ class ROKDataset(Dataset):
     #     max_start_pos = (video_idx.shape[0] - min_seq_len) // 2
     #     start_pos = randint(0, max_start_pos)
 
-
     def _stitch_videos(self, nrm_video, abnormal_video, min_seq_len):
         stitched_video = torch.cat([nrm_video, abnormal_video], dim=0)
         quarter_len = nrm_video.shape[0] // 4
-        start_idx = randint(quarter_len, quarter_len*3)
-        s_vid = stitched_video[start_idx: start_idx+min_seq_len]
+        start_idx = randint(quarter_len, quarter_len * 3)
+        s_vid = stitched_video[start_idx : start_idx + min_seq_len]
         return s_vid
-
 
     def stitch_half_speed_video(self, video, fpc, speed_up_factor):
         remainder = video.shape[0] % fpc
         if remainder > 0:
             video = video[:-remainder]
         bisect_idxs = list(range(0, video.shape[0], fpc))
-        bisect_idx = bisect_idxs[len(bisect_idxs)//2]
+        bisect_idx = bisect_idxs[len(bisect_idxs) // 2]
         sc1 = video[:bisect_idx]
         sc2 = video[bisect_idx:]
         sc1 = self.split_video_in_clips(sc1, fpc)
@@ -446,7 +482,9 @@ class ROKDataset(Dataset):
         remainder = video.shape[0] % fpc
         if remainder > 0:
             video = video[:-remainder]
-        bisect_idxs = list(range(int(video.shape[0]*0.25), int(video.shape[0]*0.75), fpc))
+        bisect_idxs = list(
+            range(int(video.shape[0] * 0.25), int(video.shape[0] * 0.75), fpc)
+        )
         bisect_idx = rnd.choice(bisect_idxs)
         sc1 = video[:bisect_idx]
         sc2 = video[bisect_idx:]
@@ -464,7 +502,9 @@ class ROKDataset(Dataset):
         remainder = video.shape[0] % fpc
         if remainder > 0:
             video = video[:-remainder]
-        split_idxs = list(range(int(video.shape[0]*0.25), int(video.shape[0]*0.75), fpc))
+        split_idxs = list(
+            range(int(video.shape[0] * 0.25), int(video.shape[0] * 0.75), fpc)
+        )
         split_idx = rnd.choice(split_idxs)
         fw = video[:split_idx]
         bw = torch.flip(video[split_idx:], dims=[0])
@@ -478,14 +518,13 @@ class ROKDataset(Dataset):
             video = video[:-remainder]
         return torch.stack(list(torch.split(video, fpc)), dim=0)
 
-
     def create_temp_disrupt(self, video):
         crop_length = 80
         video_len = video.shape[0]
         min_idx = crop_length // 2
         max_idx = video_len - (crop_length // 2)
         crop_idx = randint(min_idx, max_idx)
-        video = video[crop_idx - (crop_length//2):crop_idx + (crop_length//2)]
+        video = video[crop_idx - (crop_length // 2) : crop_idx + (crop_length // 2)]
         # get a random split index
         split_portion = rnd.choice([0.2, 0.5, 0.8])
         split_idx = int(split_portion * crop_length)
@@ -496,34 +535,47 @@ class ROKDataset(Dataset):
 
         return td_video, label
 
-
     def reg_rep_learning(self, batch):
         def _zeropad(tensor, size):
             n = size - tensor.shape[0] % size
             z = -torch.ones((n, tensor.shape[1]))
             return torch.cat((tensor, z), dim=0)
+
         new_batch = []
 
         for idx, data in enumerate(batch):
-            video = data['features']
+            video = data["features"]
             if video is None or video.shape[0] < 80:
                 continue
             td_video, label = self.create_temp_disrupt(video)
-            new_batch.append({'features': td_video, 'label': label, 'pure_nr_frames': td_video.shape[0]})
+            new_batch.append(
+                {
+                    "features": td_video,
+                    "label": label,
+                    "pure_nr_frames": td_video.shape[0],
+                }
+            )
 
-        max_len = max([s['features'].shape[0] for s in new_batch])
+        max_len = max([s["features"].shape[0] for s in new_batch])
         for data in new_batch:
-            if data['features'].shape[0] < max_len:
-                data['features'] = _zeropad(data['features'], max_len)
+            if data["features"].shape[0] < max_len:
+                data["features"] = _zeropad(data["features"], max_len)
 
         return default_collate(new_batch)
-
 
     def video_level_speed_and_motion_collate_fn(self, batch):
         def _zeropad(tensor, size):
             n = size - tensor.shape[0] % size
             if len(tensor.shape) == 5:
-                z = -torch.ones((n, tensor.shape[1], tensor.shape[2], tensor.shape[3], tensor.shape[4]))
+                z = -torch.ones(
+                    (
+                        n,
+                        tensor.shape[1],
+                        tensor.shape[2],
+                        tensor.shape[3],
+                        tensor.shape[4],
+                    )
+                )
             else:
                 z = -torch.ones((n, tensor.shape[1], tensor.shape[2]))
             return torch.cat((tensor, z), dim=0)
@@ -533,69 +585,112 @@ class ROKDataset(Dataset):
         for idx, data in enumerate(batch):
             if data is None:
                 continue
-            video = data['features']
-            if video is None: #  or video.shape[0] < fpc * 3:
+            video = data["features"]
+            if video is None:  #  or video.shape[0] < fpc * 3:
                 continue
 
-            dset = data['dataset']
+            dset = data["dataset"]
 
-            speed_up_factor = 3 # randint(2, 3)
+            speed_up_factor = 3  # randint(2, 3)
             trn_idx = randint(0, 6)
             selected = False
             nrm_video = self.split_video_in_clips(video, fpc)
             # if nrm_video.shape[0] < 3:
             #     continue
 
-            if 'speed' in opt.transformation_groups:
+            if "speed" in opt.transformation_groups:
                 if trn_idx in [0, 1]:
                     if video.shape[0] > (fpc * speed_up_factor * 4):
-                        s_video = self.speed_up_video_clip_level(video, fpc, speed_up_factor)
-                        new_batch.append({'features': s_video,
-                                          'label': 0, 'pure_nr_frames': s_video.shape[0],
-                                          'dset': dset})
+                        s_video = self.speed_up_video_clip_level(
+                            video, fpc, speed_up_factor
+                        )
+                        new_batch.append(
+                            {
+                                "features": s_video,
+                                "label": 0,
+                                "pure_nr_frames": s_video.shape[0],
+                                "dset": dset,
+                            }
+                        )
                         selected = True
 
                 if not selected:
                     trn_idx = randint(2, 6)
 
                 nrm_video = self.split_video_in_clips(video, fpc)
-                new_batch.append({'features': nrm_video, 'label': 1 if 'motion' in opt.transformation_groups else 2,
-                                  'pure_nr_frames': nrm_video.shape[0], 'dset': dset})
+                new_batch.append(
+                    {
+                        "features": nrm_video,
+                        "label": 1 if "motion" in opt.transformation_groups else 2,
+                        "pure_nr_frames": nrm_video.shape[0],
+                        "dset": dset,
+                    }
+                )
 
-            if 'motion' in opt.transformation_groups:
+            if "motion" in opt.transformation_groups:
 
                 # if trn_idx == 3:
                 class_idx = 2
-                if 'random_point_speedup' in opt.transformations_list:
+                if "random_point_speedup" in opt.transformations_list:
                     class_idx += 1
                     if video.shape[0] > (fpc * speed_up_factor * 4):
-                        st_video = self.stitch_half_speed_video(video, fpc, speed_up_factor)
-                        new_batch.append({'features': st_video, 'label': class_idx, 'pure_nr_frames': st_video.shape[0], 'dset': dset})
+                        st_video = self.stitch_half_speed_video(
+                            video, fpc, speed_up_factor
+                        )
+                        new_batch.append(
+                            {
+                                "features": st_video,
+                                "label": class_idx,
+                                "pure_nr_frames": st_video.shape[0],
+                                "dset": dset,
+                            }
+                        )
                 # if trn_idx == 4:
-                if 'double_flip' in opt.transformations_list:
+                if "double_flip" in opt.transformations_list:
                     class_idx = 3
                     foba_video = self.foba_video_in_clips(video, fpc)
-                    new_batch.append({'features': foba_video, 'label': class_idx, 'pure_nr_frames': foba_video.shape[0], 'dset': dset})
+                    new_batch.append(
+                        {
+                            "features": foba_video,
+                            "label": class_idx,
+                            "pure_nr_frames": foba_video.shape[0],
+                            "dset": dset,
+                        }
+                    )
                     class_idx += 1
 
                 # if trn_idx == 5:
-                if 'shuffle' in opt.transformations_list:
+                if "shuffle" in opt.transformations_list:
                     class_idx = 4
                     sc_video = self.shuffle_video_clips(video, fpc)
-                    new_batch.append({'features': sc_video, 'label': class_idx, 'pure_nr_frames': sc_video.shape[0], 'dset': dset})
+                    new_batch.append(
+                        {
+                            "features": sc_video,
+                            "label": class_idx,
+                            "pure_nr_frames": sc_video.shape[0],
+                            "dset": dset,
+                        }
+                    )
                     class_idx += 1
 
                 # if trn_idx == 6:
-                if 'warp' in opt.transformations_list:
+                if "warp" in opt.transformations_list:
                     class_idx = 5
                     sw_video = self.bisect_and_swap_video(video, fpc)
-                    new_batch.append({'features': sw_video, 'label': class_idx, 'pure_nr_frames': sw_video.shape[0], 'dset': dset})
+                    new_batch.append(
+                        {
+                            "features": sw_video,
+                            "label": class_idx,
+                            "pure_nr_frames": sw_video.shape[0],
+                            "dset": dset,
+                        }
+                    )
 
         opt_len = 10
-        max_len = max([s['features'].shape[0] for s in new_batch])
+        max_len = max([s["features"].shape[0] for s in new_batch])
         for data in new_batch:
-            if data['features'].shape[0] < max_len:
-                data['features'] = _zeropad(data['features'], max_len)
+            if data["features"].shape[0] < max_len:
+                data["features"] = _zeropad(data["features"], max_len)
 
         # min_len = min([s['features'].shape[0] for s in new_batch])
         # for data in new_batch:
@@ -606,15 +701,13 @@ class ROKDataset(Dataset):
         #     elif data['features'].shape[0] < opt_len:
         #         data['features'] = _zeropad(data['features'], opt_len)
 
-
         return default_collate(new_batch)
-
 
     def rot_collate_fn(self, batch):
         new_batch = []
 
         for idx, data in enumerate(batch):
-            video = data['features']
+            video = data["features"]
             video = self._crop_video_temporally(video, 20)
 
             nine_video = torch.rot90(video, 1, [2, 3])
@@ -629,7 +722,9 @@ class ROKDataset(Dataset):
             labels = labels[perm_idxs]
 
             for i in range(frames.shape[0]):
-                new_batch.append({'features ': frames[i], 'label': labels[i], 'pure_nr_frames': 1})
+                new_batch.append(
+                    {"features ": frames[i], "label": labels[i], "pure_nr_frames": 1}
+                )
 
         return default_collate(new_batch)
 
@@ -641,6 +736,7 @@ class ROKDataset(Dataset):
             elif len(tensor.shape) == 4:
                 z = -torch.ones((n, tensor.shape[1], tensor.shape[2], tensor.shape[2]))
             return torch.cat((tensor, z), dim=0)
+
         new_batch = []
         if opt.consist_lrn:
             new_nrm_batch = []
@@ -648,7 +744,7 @@ class ROKDataset(Dataset):
         for idx, data in enumerate(batch):
             if data is None:
                 continue
-            video = data['features']
+            video = data["features"]
             # if self.load_frames:
             #     video = video.permute(1, 0, 2, 3)
             if video is None:
@@ -657,71 +753,133 @@ class ROKDataset(Dataset):
             p_motion = 1
             # dset = 'oops'
             try:
-                dset = data['dataset']
+                dset = data["dataset"]
             except KeyError:
-                dset = 'avenue'
+                dset = "avenue"
             if video.shape[0] > min_seq_len:
                 if opt.consist_lrn:
                     new_nrm_batch.append(
-                        {'features': video, 'label': 0, 'pure_nr_frames': video.shape[0], 'org_vid_idx': -1, 'dset': dset})
+                        {
+                            "features": video,
+                            "label": 0,
+                            "pure_nr_frames": video.shape[0],
+                            "org_vid_idx": -1,
+                            "dset": dset,
+                        }
+                    )
                 # first modify the speed of the video
                 trn = randint(0, 78)
-                s_video, speed_label, eff_skip, max_speed = self._speed_up_video(video, min_seq_len)
+                s_video, speed_label, eff_skip, max_speed = self._speed_up_video(
+                    video, min_seq_len
+                )
                 nrm_cropped_video = self._crop_video_temporally(video, min_seq_len)
-                if 'speed' in opt.transformation_groups:
-                    new_batch.append({'features': s_video, 'label': speed_label, 'pure_nr_frames': s_video.shape[0],
-                                      'org_vid_idx': idx if opt.consist_lrn else -1, 'dset': dset})
+                if "speed" in opt.transformation_groups:
+                    new_batch.append(
+                        {
+                            "features": s_video,
+                            "label": speed_label,
+                            "pure_nr_frames": s_video.shape[0],
+                            "org_vid_idx": idx if opt.consist_lrn else -1,
+                            "dset": dset,
+                        }
+                    )
                     # then shuffle the video
-                    new_batch.append({'features': nrm_cropped_video, 'label': 0, 'pure_nr_frames': nrm_cropped_video.shape[0],
-                                      'org_vid_idx': idx if opt.consist_lrn else -1, 'dset': dset})
+                    new_batch.append(
+                        {
+                            "features": nrm_cropped_video,
+                            "label": 0,
+                            "pure_nr_frames": nrm_cropped_video.shape[0],
+                            "org_vid_idx": idx if opt.consist_lrn else -1,
+                            "dset": dset,
+                        }
+                    )
 
-                if 'motion' in opt.transformation_groups:
-                    speed_list = ['normal', 'speedx2', 'speedx3', 'speedx4']
-                    class_idx = 4 if set(speed_list).issubset(opt.transformations_list) else 3
-                    if 'shuffle' in opt.transformations_list:
+                if "motion" in opt.transformation_groups:
+                    speed_list = ["normal", "speedx2", "speedx3", "speedx4"]
+                    class_idx = (
+                        4 if set(speed_list).issubset(opt.transformations_list) else 3
+                    )
+                    if "shuffle" in opt.transformations_list:
                         sh_video = self._shuffle_video(video, min_seq_len)
-                        new_batch.append({'features': sh_video, 'label': class_idx if 'speed' in opt.transformation_groups else 0, 'pure_nr_frames': sh_video.shape[0],
-                                          'org_vid_idx': idx if opt.consist_lrn else -1, 'dset': dset})
+                        new_batch.append(
+                            {
+                                "features": sh_video,
+                                "label": class_idx
+                                if "speed" in opt.transformation_groups
+                                else 0,
+                                "pure_nr_frames": sh_video.shape[0],
+                                "org_vid_idx": idx if opt.consist_lrn else -1,
+                                "dset": dset,
+                            }
+                        )
                         class_idx += 1
 
-                    if 'double_flip' in opt.transformations_list:
-                    # then do e foba
+                    if "double_flip" in opt.transformations_list:
+                        # then do e foba
                         foba_video = self._foba_video(video, eff_skip, min_seq_len)
-                        new_batch.append({'features': foba_video, 'label': class_idx if 'speed' in opt.transformation_groups else 1, 'pure_nr_frames': foba_video.shape[0],
-                                          'org_vid_idx': idx if opt.consist_lrn else -1, 'dset': dset})
+                        new_batch.append(
+                            {
+                                "features": foba_video,
+                                "label": class_idx
+                                if "speed" in opt.transformation_groups
+                                else 1,
+                                "pure_nr_frames": foba_video.shape[0],
+                                "org_vid_idx": idx if opt.consist_lrn else -1,
+                                "dset": dset,
+                            }
+                        )
                         class_idx += 1
 
-                    if 'random_point_speedup' in opt.transformations_list:
-                        stitched_video = self._stitch_videos(nrm_cropped_video, s_video, min_seq_len)
-                        new_batch.append({'features': stitched_video, 'label': class_idx if 'speed' in opt.transformation_groups else 2, 'pure_nr_frames': stitched_video.shape[0],
-                                          'org_vid_idx': idx if opt.consist_lrn else -1, 'dset': dset})
+                    if "random_point_speedup" in opt.transformations_list:
+                        stitched_video = self._stitch_videos(
+                            nrm_cropped_video, s_video, min_seq_len
+                        )
+                        new_batch.append(
+                            {
+                                "features": stitched_video,
+                                "label": class_idx
+                                if "speed" in opt.transformation_groups
+                                else 2,
+                                "pure_nr_frames": stitched_video.shape[0],
+                                "org_vid_idx": idx if opt.consist_lrn else -1,
+                                "dset": dset,
+                            }
+                        )
                         class_idx += 1
 
-                    if 'warp' in opt.transformations_list:
+                    if "warp" in opt.transformations_list:
                         # # and at the end warp the time
                         twarp_video = self._twarp_video(video, max_speed, min_seq_len)
-                        new_batch.append({'features': twarp_video, 'label': class_idx if 'speed' in opt.transformation_groups else 3, 'pure_nr_frames': twarp_video.shape[0],
-                                          'org_vid_idx': idx if opt.consist_lrn else -1, 'dset': dset})
+                        new_batch.append(
+                            {
+                                "features": twarp_video,
+                                "label": class_idx
+                                if "speed" in opt.transformation_groups
+                                else 3,
+                                "pure_nr_frames": twarp_video.shape[0],
+                                "org_vid_idx": idx if opt.consist_lrn else -1,
+                                "dset": dset,
+                            }
+                        )
                         class_idx += 1
-
 
         if opt.consist_lrn:
             new_batch += new_nrm_batch
 
         if len(new_batch) > 0:
             if self.load_frames:
-                min_len = min([s['features'].shape[0] for s in new_batch])
+                min_len = min([s["features"].shape[0] for s in new_batch])
                 for data in new_batch:
-                    video = data['features']
-                    if data['features'].shape[0] > min_len:
-                        data['features'] = video[:min_len]
+                    video = data["features"]
+                    if data["features"].shape[0] > min_len:
+                        data["features"] = video[:min_len]
                     # video = video.permute(0, 2, 3, 1)
                     # data['features'] = train_transform(video).permute(1, 0, 2, 3)
             else:
-                max_len = max([s['features'].shape[0] for s in new_batch])
+                max_len = max([s["features"].shape[0] for s in new_batch])
                 for data in new_batch:
-                    if data['features'].shape[0] < max_len:
-                        data['features'] = _zeropad(data['features'], max_len)
+                    if data["features"].shape[0] < max_len:
+                        data["features"] = _zeropad(data["features"], max_len)
 
         return default_collate(new_batch)
 
@@ -734,61 +892,115 @@ class ROKDataset(Dataset):
         new_batch = []
         min_seq_len = 20
         for idx, data in enumerate(batch):
-            video = data['features']
-            dset = data['dataset']
+            video = data["features"]
+            dset = data["dataset"]
             # dset = 'oops'
             if video.shape[0] > min_seq_len:
                 # first modify the speed of the video
                 nrm_cropped_video = self._crop_video_temporally(video, min_seq_len)
-                new_batch.append({'features': nrm_cropped_video, 'label': 0, 'pure_nr_frames': nrm_cropped_video.shape[0],
-                                  'org_vid_idx': idx if opt.consist_lrn else -1, 'dset': dset})
+                new_batch.append(
+                    {
+                        "features": nrm_cropped_video,
+                        "label": 0,
+                        "pure_nr_frames": nrm_cropped_video.shape[0],
+                        "org_vid_idx": idx if opt.consist_lrn else -1,
+                        "dset": dset,
+                    }
+                )
 
-                s_video, speed_label, eff_skip, max_speed = self._speed_up_video(video, min_seq_len)
-                new_batch.append({'features': s_video, 'label': 2, 'pure_nr_frames': s_video.shape[0],
-                                  'org_vid_idx': idx if opt.consist_lrn else -1, 'dset': dset})
+                s_video, speed_label, eff_skip, max_speed = self._speed_up_video(
+                    video, min_seq_len
+                )
+                new_batch.append(
+                    {
+                        "features": s_video,
+                        "label": 2,
+                        "pure_nr_frames": s_video.shape[0],
+                        "org_vid_idx": idx if opt.consist_lrn else -1,
+                        "dset": dset,
+                    }
+                )
 
                 sh_video = self._shuffle_video(video, min_seq_len)
-                new_batch.append({'features': sh_video, 'label': 2, 'pure_nr_frames': sh_video.shape[0],
-                                  'org_vid_idx': idx if opt.consist_lrn else -1, 'dset': dset})
+                new_batch.append(
+                    {
+                        "features": sh_video,
+                        "label": 2,
+                        "pure_nr_frames": sh_video.shape[0],
+                        "org_vid_idx": idx if opt.consist_lrn else -1,
+                        "dset": dset,
+                    }
+                )
 
                 # and at the end warp the time
                 twarp_video = self._twarp_video(video, max_speed, min_seq_len)
-                new_batch.append({'features': twarp_video, 'label': 2, 'pure_nr_frames': twarp_video.shape[0],
-                                  'org_vid_idx': idx if opt.consist_lrn else -1, 'dset': dset})
+                new_batch.append(
+                    {
+                        "features": twarp_video,
+                        "label": 2,
+                        "pure_nr_frames": twarp_video.shape[0],
+                        "org_vid_idx": idx if opt.consist_lrn else -1,
+                        "dset": dset,
+                    }
+                )
 
                 # then do e foba
                 foba_video = self._foba_video(video, eff_skip, min_seq_len)
-                new_batch.append({'features': foba_video, 'label': 1, 'pure_nr_frames': foba_video.shape[0],
-                                  'org_vid_idx': idx if opt.consist_lrn else -1, 'dset': dset})
+                new_batch.append(
+                    {
+                        "features": foba_video,
+                        "label": 1,
+                        "pure_nr_frames": foba_video.shape[0],
+                        "org_vid_idx": idx if opt.consist_lrn else -1,
+                        "dset": dset,
+                    }
+                )
 
-                stitched_video = self._stitch_videos(nrm_cropped_video, s_video, min_seq_len)
-                new_batch.append({'features': stitched_video, 'label': 1, 'pure_nr_frames': stitched_video.shape[0],
-                                  'org_vid_idx': idx if opt.consist_lrn else -1, 'dset': dset})
+                stitched_video = self._stitch_videos(
+                    nrm_cropped_video, s_video, min_seq_len
+                )
+                new_batch.append(
+                    {
+                        "features": stitched_video,
+                        "label": 1,
+                        "pure_nr_frames": stitched_video.shape[0],
+                        "org_vid_idx": idx if opt.consist_lrn else -1,
+                        "dset": dset,
+                    }
+                )
 
         if len(new_batch) > 0:
-            max_len = max([s['features'].shape[0] for s in new_batch])
+            max_len = max([s["features"].shape[0] for s in new_batch])
             for data in new_batch:
-                if data['features'].shape[0] < max_len:
-                    data['features'] = _zeropad(data['features'], max_len)
+                if data["features"].shape[0] < max_len:
+                    data["features"] = _zeropad(data["features"], max_len)
 
         return default_collate(new_batch)
 
     def get_rok_sampler(self):
         # count samples for each class
-        dsets = list(self.csv['dataset'])
+        dsets = list(self.csv["dataset"])
         dset_sample_count = np.unique(dsets, return_counts=True)[1]
         num_samples = sum(dset_sample_count)
-        kin_ratio = 1./(dset_sample_count[0]/num_samples)
-        oops_ratio = 1./(dset_sample_count[1]/num_samples)
-        rareact_ratio = 1./(dset_sample_count[2]/num_samples)
-        weights = [kin_ratio if ds=='kinetics' else (oops_ratio if ds=='oops' else rareact_ratio) for ds in dsets]
+        kin_ratio = 1.0 / (dset_sample_count[0] / num_samples)
+        oops_ratio = 1.0 / (dset_sample_count[1] / num_samples)
+        rareact_ratio = 1.0 / (dset_sample_count[2] / num_samples)
+        weights = [
+            kin_ratio
+            if ds == "kinetics"
+            else (oops_ratio if ds == "oops" else rareact_ratio)
+            for ds in dsets
+        ]
         return WeightedRandomSampler(weights, len(dsets))
 
-if __name__ == '__main__':
-    dataset = ROKDataset('val', load_frames=True)
-    dloader = DataLoader(dataset,
-                         num_workers=32,
-                         batch_size=4,
-                         collate_fn=dataset.speed_and_motion_collate_fn)
+
+if __name__ == "__main__":
+    dataset = ROKDataset("val", load_frames=True)
+    dloader = DataLoader(
+        dataset,
+        num_workers=32,
+        batch_size=4,
+        collate_fn=dataset.speed_and_motion_collate_fn,
+    )
     for idx, data in enumerate(dloader):
         print(idx)

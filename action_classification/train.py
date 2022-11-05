@@ -83,14 +83,16 @@ def train(**kwargs):
 
             if opt.use_crf:
                 videos, position_ids, pnf = prep_for_local(videos, pure_nr_frames)
-                if opt.backbone == 'vit_longformer':
+                if opt.backbone == "vit_longformer":
                     out = model(videos, position_ids, None, pure_nr_frames)
                 else:
                     out = model(videos.permute(0, 2, 1, 3, 4))
                 pure_nr_frames = torch.t(pure_nr_frames)[0]
                 videos = prep_for_crf(out, pure_nr_frames)
-                if opt.backbone == 'vit_longformer':
-                    _loss = model(videos, None, None, pure_nr_frames, labels=labels, for_crf=True).mean()
+                if opt.backbone == "vit_longformer":
+                    _loss = model(
+                        videos, None, None, pure_nr_frames, labels=labels, for_crf=True
+                    ).mean()
                 else:
                     _loss = model(videos, labels=labels, for_crf=True).mean()
             else:

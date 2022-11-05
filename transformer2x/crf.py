@@ -1,8 +1,7 @@
-
 # @Author: Enea Duka
 # @Date: 8/27/21
 
-__version__ = '0.7.2'
+__version__ = "0.7.2"
 
 from typing import List, Optional
 
@@ -41,7 +40,7 @@ class CRF(nn.Module):
 
     def __init__(self, num_tags: int, batch_first: bool = False) -> None:
         if num_tags <= 0:
-            raise ValueError(f'invalid number of tags: {num_tags}')
+            raise ValueError(f"invalid number of tags: {num_tags}")
         super().__init__()
         self.num_tags = num_tags
         self.batch_first = batch_first
@@ -62,15 +61,15 @@ class CRF(nn.Module):
         nn.init.uniform_(self.transitions, -0.1, 0.1)
 
     def __repr__(self) -> str:
-        return f'{self.__class__.__name__}(num_tags={self.num_tags})'
+        return f"{self.__class__.__name__}(num_tags={self.num_tags})"
 
     def forward(
-            self,
-            emissions: torch.Tensor,
-            tags: torch.LongTensor,
-            mask: Optional[torch.ByteTensor] = None,
-            reduction: str = 'sum',
-            compute_probs = False
+        self,
+        emissions: torch.Tensor,
+        tags: torch.LongTensor,
+        mask: Optional[torch.ByteTensor] = None,
+        reduction: str = "sum",
+        compute_probs=False,
     ) -> torch.Tensor:
         """Compute the conditional log likelihood of a sequence of tags given emission scores.
 
@@ -96,8 +95,8 @@ class CRF(nn.Module):
             return self.compute_marginal_probabilities(emissions, mask)
         else:
             self._validate(emissions, tags=tags, mask=mask)
-            if reduction not in ('none', 'sum', 'mean', 'token_mean'):
-                raise ValueError(f'invalid reduction: {reduction}')
+            if reduction not in ("none", "sum", "mean", "token_mean"):
+                raise ValueError(f"invalid reduction: {reduction}")
             if mask is None:
                 mask = torch.ones_like(tags, dtype=torch.uint8)
 
@@ -112,17 +111,18 @@ class CRF(nn.Module):
             # shape: (batch_size,)
             llh = numerator - denominator
 
-            if reduction == 'none':
+            if reduction == "none":
                 return llh
-            if reduction == 'sum':
+            if reduction == "sum":
                 return llh.sum()
-            if reduction == 'mean':
+            if reduction == "mean":
                 return llh.mean()
-            assert reduction == 'token_mean'
+            assert reduction == "token_mean"
             return llh.sum() / mask.float().sum()
 
-    def decode(self, emissions: torch.Tensor,
-               mask: Optional[torch.ByteTensor] = None) -> List[List[int]]:
+    def decode(
+        self, emissions: torch.Tensor, mask: Optional[torch.ByteTensor] = None
+    ) -> List[List[int]]:
         """Find the most likely tag sequence using Viterbi algorithm.
 
         Args:
@@ -146,36 +146,42 @@ class CRF(nn.Module):
         return self._viterbi_decode(emissions, mask)
 
     def _validate(
-            self,
-            emissions: torch.Tensor,
-            tags: Optional[torch.LongTensor] = None,
-            mask: Optional[torch.ByteTensor] = None) -> None:
+        self,
+        emissions: torch.Tensor,
+        tags: Optional[torch.LongTensor] = None,
+        mask: Optional[torch.ByteTensor] = None,
+    ) -> None:
         if emissions.dim() != 3:
-            raise ValueError(f'emissions must have dimension of 3, got {emissions.dim()}')
+            raise ValueError(
+                f"emissions must have dimension of 3, got {emissions.dim()}"
+            )
         if emissions.size(2) != self.num_tags:
             raise ValueError(
-                f'expected last dimension of emissions is {self.num_tags}, '
-                f'got {emissions.size(2)}')
+                f"expected last dimension of emissions is {self.num_tags}, "
+                f"got {emissions.size(2)}"
+            )
 
         if tags is not None:
             if emissions.shape[:2] != tags.shape:
                 raise ValueError(
-                    'the first two dimensions of emissions and tags must match, '
-                    f'got {tuple(emissions.shape[:2])} and {tuple(tags.shape)}')
+                    "the first two dimensions of emissions and tags must match, "
+                    f"got {tuple(emissions.shape[:2])} and {tuple(tags.shape)}"
+                )
 
         if mask is not None:
             if emissions.shape[:2] != mask.shape:
                 raise ValueError(
-                    'the first two dimensions of emissions and mask must match, '
-                    f'got {tuple(emissions.shape[:2])} and {tuple(mask.shape)}')
+                    "the first two dimensions of emissions and mask must match, "
+                    f"got {tuple(emissions.shape[:2])} and {tuple(mask.shape)}"
+                )
             no_empty_seq = not self.batch_first and mask[0].all()
             no_empty_seq_bf = self.batch_first and mask[:, 0].all()
             if not no_empty_seq and not no_empty_seq_bf:
-                raise ValueError('mask of the first timestep must all be on')
+                raise ValueError("mask of the first timestep must all be on")
 
     def _compute_score(
-            self, emissions: torch.Tensor, tags: torch.LongTensor,
-            mask: torch.ByteTensor) -> torch.Tensor:
+        self, emissions: torch.Tensor, tags: torch.LongTensor, mask: torch.ByteTensor
+    ) -> torch.Tensor:
         # emissions: (seq_length, batch_size, num_tags)
         # tags: (seq_length, batch_size)
         # mask: (seq_length, batch_size)
@@ -213,7 +219,8 @@ class CRF(nn.Module):
         return score
 
     def _compute_normalizer(
-            self, emissions: torch.Tensor, mask: torch.ByteTensor) -> torch.Tensor:
+        self, emissions: torch.Tensor, mask: torch.ByteTensor
+    ) -> torch.Tensor:
         # emissions: (seq_length, batch_size, num_tags)
         # mask: (seq_length, batch_size)
         assert emissions.dim() == 3 and mask.dim() == 2
@@ -263,8 +270,9 @@ class CRF(nn.Module):
         # shape: (batch_size,)
         return torch.logsumexp(score, dim=1)
 
-    def _viterbi_decode(self, emissions: torch.FloatTensor,
-                        mask: torch.ByteTensor) -> List[List[int]]:
+    def _viterbi_decode(
+        self, emissions: torch.FloatTensor, mask: torch.ByteTensor
+    ) -> List[List[int]]:
         # emissions: (seq_length, batch_size, num_tags)
         # mask: (seq_length, batch_size)
         assert emissions.dim() == 3 and mask.dim() == 2
@@ -330,7 +338,7 @@ class CRF(nn.Module):
 
             # We trace back where the best last tag comes from, append that to our best tag
             # sequence, and trace it back again, and so on
-            for hist in reversed(history[:seq_ends[idx]]):
+            for hist in reversed(history[: seq_ends[idx]]):
                 best_last_tag = hist[idx][best_tags[-1]]
                 best_tags.append(best_last_tag.item())
 
@@ -340,10 +348,9 @@ class CRF(nn.Module):
 
         return best_tags_list
 
-    def _compute_log_alpha(self,
-                           emissions: torch.Tensor,
-                           mask: torch.Tensor,
-                           run_backwards: bool) -> torch.Tensor:
+    def _compute_log_alpha(
+        self, emissions: torch.Tensor, mask: torch.Tensor, run_backwards: bool
+    ) -> torch.Tensor:
         # emissions: (seq_length, batch_size, num_tags)
         # mask: (seq_length, batch_size)
         assert emissions.dim() == 3 and mask.dim() == 2
@@ -359,7 +366,9 @@ class CRF(nn.Module):
 
         if run_backwards:
             # running backwards, so transpose
-            broadcast_transitions = broadcast_transitions.transpose(1, 2)  # (1, num_tags, num_tags)
+            broadcast_transitions = broadcast_transitions.transpose(
+                1, 2
+            )  # (1, num_tags, num_tags)
             emissions_broadcast = emissions_broadcast.transpose(2, 3)
 
             # the starting probability is end_transitions if running backwards
@@ -375,24 +384,27 @@ class CRF(nn.Module):
             # Broadcast log_prob over all possible next tags
             broadcast_log_prob = log_prob[-1].unsqueeze(2)  # (batch_size, num_tags, 1)
             # Sum current log probability, transition, and emission scores
-            score = broadcast_log_prob + broadcast_transitions + emissions_broadcast[
-                i]  # (batch_size, num_tags, num_tags)
+            score = (
+                broadcast_log_prob + broadcast_transitions + emissions_broadcast[i]
+            )  # (batch_size, num_tags, num_tags)
             # Sum over all possible current tags, but we're in log prob space, so a sum
             # becomes a log-sum-exp
             score = self._log_sum_exp(score, dim=1)
             # Set log_prob to the score if this timestep is valid (mask == 1), otherwise
             # copy the prior value
-            log_prob.append(score * mask[i].unsqueeze(1) +
-                            log_prob[-1] * (1. - mask[i]).unsqueeze(1))
+            log_prob.append(
+                score * mask[i].unsqueeze(1)
+                + log_prob[-1] * (1.0 - mask[i]).unsqueeze(1)
+            )
 
         if run_backwards:
             log_prob.reverse()
 
         return torch.stack(log_prob)
 
-    def compute_marginal_probabilities(self,
-                                       emissions: torch.Tensor,
-                                       mask: torch.Tensor) -> torch.Tensor:
+    def compute_marginal_probabilities(
+        self, emissions: torch.Tensor, mask: torch.Tensor
+    ) -> torch.Tensor:
         alpha = self._compute_log_alpha(emissions, mask, run_backwards=False)
         beta = self._compute_log_alpha(emissions, mask, run_backwards=True)
         z = torch.logsumexp(alpha[alpha.shape[0] - 1] + self.end_transitions, dim=1)
@@ -406,13 +418,14 @@ class CRF(nn.Module):
         # Make offset broadcastable
         broadcast_offset = offset.unsqueeze(dim)
         # Perform log-sum-exp safely
-        safe_log_sum_exp = torch.log(torch.sum(torch.exp(tensor - broadcast_offset), dim))
+        safe_log_sum_exp = torch.log(
+            torch.sum(torch.exp(tensor - broadcast_offset), dim)
+        )
         # Add offset back
         return offset + safe_log_sum_exp
 
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     num_tags = 4  # number of tags is 5
     model = CRF(num_tags, batch_first=True)
 
@@ -427,17 +440,24 @@ if __name__ == '__main__':
     loss_fn = torch.nn.CrossEntropyLoss()
 
     for i in range(10000):
-        out = model.compute_marginal_probabilities(train_emissions.permute(1, 0, 2), mask).view(batch_size, seq_length, -1)
-        loss = loss_fn(out.reshape(batch_size*seq_length, num_tags), train_labels.reshape(batch_size*seq_length))
+        out = model.compute_marginal_probabilities(
+            train_emissions.permute(1, 0, 2), mask
+        ).view(batch_size, seq_length, -1)
+        loss = loss_fn(
+            out.reshape(batch_size * seq_length, num_tags),
+            train_labels.reshape(batch_size * seq_length),
+        )
         loss.backward()
         optimizer.step()
 
     # print('After emissions:', emissions)
-    mg_prob = model.compute_marginal_probabilities(test_emissions.permute(1, 0, 2), mask)
+    mg_prob = model.compute_marginal_probabilities(
+        test_emissions.permute(1, 0, 2), mask
+    )
     pred_labels = mg_prob.view(batch_size, seq_length, -1).argmax(dim=-1)
     out_seqs = model.decode(test_emissions)
 
     # mg_p = F.softmax(mg_prob.view(batch_size, seq_length, -1), dim=-1)
 
     print("MG prob: ", mg_prob.view(batch_size, seq_length, -1))
-    print('Out seqs: ', out_seqs)
+    print("Out seqs: ", out_seqs)

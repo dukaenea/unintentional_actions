@@ -1,9 +1,9 @@
-7# @Author: Enea Duka
+7  # @Author: Enea Duka
 # @Date: 5/18/21
 
 import sys
 
-sys.path.append('/BS/unintentional_actions/work/unintentional_actions')
+sys.path.append("/BS/unintentional_actions/work/unintentional_actions")
 import os
 import warnings
 import torch
@@ -24,17 +24,17 @@ from utils.logging_setup import viz
 
 
 def test(**kwargs):
-    model = kwargs['model']
-    backbone = kwargs['backbone']
-    loss = kwargs['loss']
-    test_dataloader = kwargs['dataloader']
-    mode = kwargs['mode']
-    epoch = kwargs['epoch']
-    time_id = kwargs['time']
+    model = kwargs["model"]
+    backbone = kwargs["backbone"]
+    loss = kwargs["loss"]
+    test_dataloader = kwargs["dataloader"]
+    mode = kwargs["mode"]
+    epoch = kwargs["epoch"]
+    time_id = kwargs["time"]
 
     model.eval()
     prec = Precision(mode)
-    meter = Meter(mode=mode, name='loss')
+    meter = Meter(mode=mode, name="loss")
 
     with torch.no_grad():
 
@@ -64,35 +64,56 @@ def test(**kwargs):
             #     meter.log()
         meter.log()
         if opt.viz and epoch % opt.viz_freq == 0:
-            visdom_plot_losses(viz.env, opt.log_name + '-loss-' + str(time_id), epoch,
-                               xylabel=('epoch', 'loss'), **meter.viz_dict())
-            visdom_plot_losses(viz.env, opt.log_name + '-prec-' + str(time_id), epoch,
-                               xylabel=('epoch', 'prec@1'), **{'pr@1/%s' % mode.upper():  prec.top1()})
+            visdom_plot_losses(
+                viz.env,
+                opt.log_name + "-loss-" + str(time_id),
+                epoch,
+                xylabel=("epoch", "loss"),
+                **meter.viz_dict()
+            )
+            visdom_plot_losses(
+                viz.env,
+                opt.log_name + "-prec-" + str(time_id),
+                epoch,
+                xylabel=("epoch", "prec@1"),
+                **{"pr@1/%s" % mode.upper(): prec.top1()}
+            )
 
-    return {'top1': prec.top1()}
+    return {"top1": prec.top1()}
 
 
 def train(**kwargs):
-    model = kwargs['model']
-    backbone = kwargs['backbone']
-    optimizer = kwargs['optimizer']
-    loss_fn = kwargs['loss_fn']
-    dataloader = kwargs['train_loader']
-    tst = datetime.now().strftime('%Y%m%d-%H%M%S')
+    model = kwargs["model"]
+    backbone = kwargs["backbone"]
+    optimizer = kwargs["optimizer"]
+    loss_fn = kwargs["loss_fn"]
+    dataloader = kwargs["train_loader"]
+    tst = datetime.now().strftime("%Y%m%d-%H%M%S")
 
-    loss_meter = Meter(mode='train')
+    loss_meter = Meter(mode="train")
     model_saver = ModelSaver(
-        path=os.path.join(opt.storage, 'models', opt.dataset, opt.model_name, opt.sfx, opt.log_name, 'val'))
-    logger.debug('Starting training for %d epochs:' % opt.epochs)
+        path=os.path.join(
+            opt.storage,
+            "models",
+            opt.dataset,
+            opt.model_name,
+            opt.sfx,
+            opt.log_name,
+            "val",
+        )
+    )
+    logger.debug("Starting training for %d epochs:" % opt.epochs)
     backbone.eval()
 
-    val_acc = test(model=model,
-                   backbone=backbone,
-                   loss=loss_fn,
-                   dataloader=kwargs['val_dataloader'],
-                   mode='val',
-                   epoch=-1,
-                   time=tst)
+    val_acc = test(
+        model=model,
+        backbone=backbone,
+        loss=loss_fn,
+        dataloader=kwargs["val_dataloader"],
+        mode="val",
+        epoch=-1,
+        time=tst,
+    )
 
     # logger.debug("VAL ACC: %f" % val_acc['top1'])
     label_m1 = 0
@@ -110,14 +131,14 @@ def train(**kwargs):
             videos = data[0]
             labels = data[1]
             # labels[labels == -1] = 0
-        #     counts = torch.bincount(labels)
-        #     label_1 += counts[0]
-        #     label_2 += counts[1]
-        #     label_3 += counts[2]
-        #
-        # print(label_1)
-        # print(label_2)
-        # print(label_3)
+            #     counts = torch.bincount(labels)
+            #     label_1 += counts[0]
+            #     label_2 += counts[1]
+            #     label_3 += counts[2]
+            #
+            # print(label_1)
+            # print(label_2)
+            # print(label_3)
 
             # labels[labels == -1] = 0
             optimizer.zero_grad()
@@ -130,20 +151,24 @@ def train(**kwargs):
             loss.backward()
             optimizer.step()
         if epoch % opt.test_freq == 0 and epoch > 0:
-            check_val = test(model=model,
-                           backbone=backbone,
-                           loss=loss_fn,
-                           dataloader=kwargs['val_dataloader'],
-                           mode='val',
-                           epoch=-1,
-                           time=tst)
+            check_val = test(
+                model=model,
+                backbone=backbone,
+                loss=loss_fn,
+                dataloader=kwargs["val_dataloader"],
+                mode="val",
+                epoch=-1,
+                time=tst,
+            )
 
-            logger.debug("VAL ACC: %f" % val_acc['top1'])
+            logger.debug("VAL ACC: %f" % val_acc["top1"])
         if opt.save_model and epoch % opt.save_model == 0 and check_val:
             if model_saver.check(check_val):
-                save_dict = {'epoch': epoch,
-                             'state_dict': copy.deepcopy(model.state_dict()),
-                             'optimizer': copy.deepcopy(optimizer.state_dict().copy())}
+                save_dict = {
+                    "epoch": epoch,
+                    "state_dict": copy.deepcopy(model.state_dict()),
+                    "optimizer": copy.deepcopy(optimizer.state_dict().copy()),
+                }
                 model_saver.update(check_val, save_dict, epoch)
 
             model_saver.save()
@@ -151,10 +176,9 @@ def train(**kwargs):
         loss_meter.log()
 
 
-
 def do_unint_act_task():
 
-    opt.unint_act_backbone = 'r2plus1d'
+    opt.unint_act_backbone = "r2plus1d"
     opt.dropout = 0.2
     opt.batch_size = 64
     opt.workers = 32
@@ -162,49 +186,38 @@ def do_unint_act_task():
     opt.balance_fails_only = True
     opt.all_fail_videos = False
     opt.viz = True
-    opt.sfx = str('%s.unint_act_baseline.bs%d.epochs%d.%s' % ('oops', opt.batch_size, opt.epochs, datetime.now().strftime('%Y%m%d-%H%M%S')))
+    opt.sfx = str(
+        "%s.unint_act_baseline.bs%d.epochs%d.%s"
+        % ("oops", opt.batch_size, opt.epochs, datetime.now().strftime("%Y%m%d-%H%M%S"))
+    )
 
-    opt.optim = 'adam'
+    opt.optim = "adam"
     opt.momentum = 0.9
     opt.lr = 1e-3
     opt.weight_decay = 1e-4
     opt.test_freq = 1
-
 
     opt.use_tqdm = True
     setup_logger_path()
 
     train_dataloader = get_video_loader_frames(opt)
     opt.val = True
-    opt.fails_path = '/BS/unintentional_actions/nobackup/oops/oops_dataset/oops_video'
+    opt.fails_path = "/BS/unintentional_actions/nobackup/oops/oops_dataset/oops_video"
     val_dataloader = get_video_loader_frames(opt)
 
     model, optimizer, loss = create_mlp_model(2048, 3)
     backbone, _, _ = build_r2plus1d()
 
-    train(model=model,
-          backbone=backbone,
-          optimizer=optimizer,
-          loss_fn=loss,
-          train_loader=train_dataloader,
-          val_dataloader=val_dataloader)
+    train(
+        model=model,
+        backbone=backbone,
+        optimizer=optimizer,
+        loss_fn=loss,
+        train_loader=train_dataloader,
+        val_dataloader=val_dataloader,
+    )
 
 
-
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     warnings.filterwarnings("ignore")
     do_unint_act_task()
-
-
-
-
-
-
-
-
-
-
-
-
-
