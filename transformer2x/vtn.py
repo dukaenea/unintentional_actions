@@ -178,22 +178,24 @@ class VTN(nn.Module):
 class GlobalVTN(nn.Module):
     def __init__(self, pretrained_frames):
         super(GlobalVTN, self).__init__()
-        opt.num_classes = 7
+        opt.num_classes = 6
         if opt.backbone == 'vit_longformer':
             self.local_model = VTN(local=True, use_bn=True)
         elif opt.backbone == 'r3d_18':
             self.local_model = R3D18(pretrain_backbone=False, local=True)
         if pretrained_frames:
+            if opt.use_crf:
+                self.crf = CRF(num_tags=3, batch_first=True)
             self.local_model.cuda()
             self.local_model = nn.DataParallel(self.local_model)
             saved_model = torch.load(opt.vtn_ptr_path if opt.backbone == 'vit_longformer' else opt.resnet_ptr_path)
             model_dict = saved_model['state_dict']
-            self.local_model.load_state_dict(model_dict, strict=False)
+            self.local_model.load_state_dict(model_dict, strict=True)
             self.local_model = self.local_model.module
         # if opt.backbone == 'r3d_18':
         #     self.local_model.remove_mlp()
 
-        opt.num_classes = 7
+        opt.num_classes = 6
         self.global_model = VTN(local=False, use_bn=False)
         if opt.use_crf:
             self.crf = CRF(num_tags=3, batch_first=True)
@@ -219,19 +221,19 @@ class GlobalVTN(nn.Module):
             if self.training:
                 if len(labels.shape) == 1:
                     labels = labels.unsqueeze(0)
-                # if opt.crf_margin_probs:
-                #     x = x.permute(1, 0, 2)
-                #     crf_mask = crf_mask.permute(1, 0)
-                #     probs = self.crf.compute_marginal_probabilities(x, crf_mask)
-                #     return probs
-                # else:
-                loss = -self.crf.forward(x, labels, mask=crf_mask)
+                if opt.crf_margin_probs:
+                    x = x.permute(1, 0, 2)
+                    crf_mask = crf_mask.permute(1, 0)
+                    probs = self.crf(x, labels, mask=crf_mask, compute_probs=True)
+                    return probs
+                else:
+                    loss = -self.crf.forward(x, labels, mask=crf_mask)
                 return loss
             else:
                 if opt.crf_margin_probs:
                     x = x.permute(1, 0, 2)
                     crf_mask = crf_mask.permute(1, 0)
-                    probs = self.crf.compute_marginal_probabilities(x, crf_mask)
+                    probs = self.crf(x, labels, mask=crf_mask, compute_probs=True)
                     return probs
                 else:
                     loss = -self.crf.forward(x, labels, mask=crf_mask)
@@ -280,7 +282,7 @@ def part_freeze_vit(model):
             param[1].requires_grad = False
             print(param[0])
 
-def create_model_trn_2x(num_classes=None, pretrained=False, pretrain_scale='frame+clip'):
+def create_model_trn_2x(num_classes=None, pretrained=False, pretrain_scale='frame'):
     model = GlobalVTN(pretrained and pretrain_scale == 'frame')
     if num_classes is not None and not pretrained:
         model.reinit_mlp(num_classes)
@@ -294,7 +296,7 @@ def create_model_trn_2x(num_classes=None, pretrained=False, pretrain_scale='fram
             if opt.use_memory:
                 model.module.memory.memory = saved_model['memory_state']
         if pretrained:
-            # model.module.freeze()
+            # model.module.local_model.freeze()
             if num_classes is not None:
                 model.module.reinit_mlp(num_classes)
             model.module.cuda()

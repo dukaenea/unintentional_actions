@@ -53,7 +53,7 @@ longformer:
   num_classes: 7
   num_classes_ptr: 8
   vtn_ptr_path: ''
-  resnet_ptr_path: '/BS/unintentional_actions/work/storage/models/all/Resnet3D18/val/top1/Resnet3D18___v0.4258_ep2.pth.tar'
+  resnet_ptr_path: '/BS/unintentional_actions/work/storage/models/all/Resnet3D18/all.rep_learning.tag:r3d_18.layers3.attn_win32.classes8.time20220130-131841/val/top1/Resnet3D18__all.rep_learning.tag:r3d_18.layers3.attn_win32.classes8.time20220130-131841_v0.7560_ep6.pth.tar'
   use_crf: false
   spat_temp: false
   multi_scale: true
@@ -77,15 +77,15 @@ train:
   test: true
   save_model: 1
   test_val: true
-  epochs: 100
+  epochs: 15
   use_tqdm: true
   contrastive_loss: false
   rep_learning: true
   optim: 'adam'
-  lr: 0.0001
+  lr: 0.00002
   weight_decay: 0.00001
   test_freq: 1
-  batch_size: 16
+  batch_size: 8
   num_workers: 8
 
 vizdom:

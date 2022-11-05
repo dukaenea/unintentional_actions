@@ -79,8 +79,11 @@ class KineticsAndFails(VisionDataset):
         if load_frames:
             self.base_features_path = '/BS/unintentional_actions/nobackup/oops/oops_dataset/oops_video/%s_downsize' % ('val' if val else 'train')
         else:
-            self.base_features_path = '/BS/unintentional_actions/work/data/oops/vit_features/%s_normalised' % (
+            # self.base_features_path = '/BS/unintentional_actions/work/data/oops/vit_features/%s_normalised' % (
+            #     'val' if val else 'train')
+            self.base_features_path = '/BS/unintentional_actions/nobackup/oops/resnet_feats/resnet_18/%s_normalized' % (
                 'val' if val else 'train')
+
         self.video_time_units = t_units
         self.load_videos = load_videos
         self.load_frames = load_frames
@@ -358,17 +361,7 @@ class KineticsAndFails(VisionDataset):
 
         return video.permute(1, 0, 2, 3)
 
-
-    def _read_video_features(self, video_path, video_idx, clip_idx, start_pts, end_pts, terminal_pts, video=None):
-
-        # if self.load_frames:
-        #     video = self._get_raw_video(video_path)
-        # else:
-        if video is None:
-            compressed_file = np.load(video_path)
-            array = compressed_file['arr_0']
-            video = torch.from_numpy(array)
-
+    def _read_video_features(self, video_idx, clip_idx, start_pts, end_pts, terminal_pts, video=None):
 
         if video is None:
             return None, None, None
@@ -376,13 +369,21 @@ class KineticsAndFails(VisionDataset):
         start_frame, end_frame, original_fps, start_time, end_time = self._compute_clip_times(video_idx, start_pts,
                                                                                               end_pts, terminal_pts)
         video = video[start_frame:end_frame + 1]  # since torch slicing has exclusive target
-
-        # num_frames = video.shape[0] * (float(self.fps) / float(original_fps))
-        # resampling_idx = self._resample_video_idx(num_frames, original_fps, self.fps)
         resampling_idx = self.video_clips.resampling_idxs[video_idx][clip_idx]
         resampling_idx = resampling_idx - resampling_idx[0]
         video = video[resampling_idx]
         return video, start_time, end_time
+
+    def _resample_video_idx(self, num_frames, original_fps, new_fps):
+        step = float(original_fps) / new_fps
+        if step.is_integer():
+            # optimization: if step is integer, don't need to perform
+            # advanced indexing
+            step = int(step)
+            return slice(None, None, step)
+        idxs = torch.arange(num_frames, dtype=torch.float32) * step
+        idxs = idxs.floor().to(torch.int64)
+        return idxs
 
     def _resample_video_idx(self, num_frames, original_fps, new_fps):
         step = float(original_fps) / new_fps
@@ -403,19 +404,13 @@ class KineticsAndFails(VisionDataset):
                 "({} number of clips)".format(idx, self.video_clips.num_clips())
             )
         video_idx, clip_idx = self.video_clips.get_clip_location(clip_idx)
-        video_path = self.video_clips.video_paths[video_idx]
-        if not self.load_frames:
-            video_name = video_path.split('/')[-1] + '.npz'
-        else:
-            video_name = video_path.split('/')[-1]
-        video_path = os.path.join(self.base_features_path, video_name)
         clip_pts = self.video_clips.clips[video_idx][clip_idx]
 
         start_pts = clip_pts[0].item()
         end_pts = clip_pts[-1].item()
         terminal_pts = self.video_clips.clips[video_idx][-1][-1].item()
-        video_clip, start_time, end_time = self._read_video_features(video_path, video_idx, clip_idx, start_pts,
-                                                                     end_pts, terminal_pts, video if self.load_frames else None)
+        video_clip, start_time, end_time = self._read_video_features(video_idx, clip_idx, start_pts,
+                                                                     end_pts, terminal_pts, video)
         return video_clip, start_time, end_time
 
     def padd_video_clips_collate_fn(self, batch):
@@ -451,13 +446,24 @@ class KineticsAndFails(VisionDataset):
         def default_value():
             return []
 
-        video_path = self.video_clips.video_paths[idx]
+        org_video_path = self.video_clips.video_paths[idx]
         clips = defaultdict(default_value)
         cum_size_before = 0 if idx == 0 else self.video_clips.cumulative_sizes[idx - 1]
         times_string = ''
 
+        if not self.load_frames:
+            video_name = org_video_path.split('/')[-1] # + '.npz'
+            video_name = video_name.replace('mp4', 'npz')
+        else:
+            video_name = org_video_path.split('/')[-1]
+        video_path = os.path.join(self.base_features_path, video_name)
+
         if self.load_frames:
             video = self._get_raw_video(video_path)
+        else:
+            compressed_file = np.load(video_path)
+            array = compressed_file['arr_0']
+            video = torch.from_numpy(array)
 
         if video is None:
             return None
@@ -492,7 +498,7 @@ class KineticsAndFails(VisionDataset):
         clips['label'] = torch.tensor(clips['label'], dtype=torch.long)
         clips['pure_nr_frames'] = clips['features'].shape[0]
         clips['times'] = times_string
-        video_name = video_path.split('/')[-1].replace('.mp4', '')
+        video_name = org_video_path.split('/')[-1].replace('.mp4', '')
         t_time = self.fails_data[video_name]['t']
         clips['t'] = t_time
         clips['rel_t'] = self.fails_data[video_name]['rel_t']

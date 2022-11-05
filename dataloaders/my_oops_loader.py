@@ -55,7 +55,8 @@ class KineticsAndFails(VisionDataset):
                  extensions=('.mp4',), video_clips=None, fails_only=False, val=False, balance_fails_only=False,
                  get_clip_times=False, fails_video_list=None, fns_to_remove=None, all_fail_videos=True,
                  selfsup_loss=None, clip_interval_factor=None,
-                 labeled_fails=True, debug_dataset=False, anticipate_label=0, data_proportion=1, t_units=None, **kwargs):
+                 labeled_fails=True, debug_dataset=False, anticipate_label=0, data_proportion=1, t_units=None,
+                 load_frames=False, **kwargs):
         self.clip_len = frames_per_clip / fps
         self.clip_step = step_between_clips / fps
         self.clip_interval_factor = clip_interval_factor

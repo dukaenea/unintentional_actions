@@ -33,7 +33,7 @@ def learn_representation():
     opt.rep_data_level = 'features'
     opt.rep_backbone = 'resnet'
     opt.lr_scheduler = 'step'
-    opt.backbone = 'r3d_18'
+    opt.backbone = 'vit_longformer'
 
     # opt.attention_probs_dropout_prob = 0
     # opt.hidden_dropout_prob = 0
@@ -45,7 +45,7 @@ def learn_representation():
     # opt.attention_heads = 4
     opt.intermediate_size = 3072
     opt.hidden_dim = 512
-    opt.mlp_dim = 256
+    opt.mlp_dim = 1024
     # opt.attention_probs_dropout_prob = 0.3
     # opt.hidden_dropout_prob = 0.3
     # opt.mlp_dropout = 0.3
@@ -125,12 +125,20 @@ def learn_representation():
     # opt.vtn_ptr_path = '/BS/unintentional_actions/work/storage/models/all/VideoLongformer/all.rep_learning.tag:speed&motion.layers3.attn_win32.classes7.time20211120-103635/val/top1/VideoLongformer__all.rep_learning.tag:speed&motion.layers3.attn_win32.classes7.time20211120-103635_v0.4282_ep94.pth.tar'
     # opt.vtn_ptr_path = '/BS/unintentional_actions/work/storage/models/oops/VideoLongformer_MLP/oops.unint_act.classification.layers3.attn_win32.time20211121-134407_trn_2x/lr:0.000100~ep:50~bs:128~win:32~b_lr:1.000000~ptr:True_cntr_loss/val/top1/VideoLongformer_MLP__oops.unint_act.classification.layers3.attn_win32.time20211121-134407_trn_2x_v0.7332_ep47.pth.tar'
     opt.vtn_ptr_path = '/BS/unintentional_actions/work/storage/models/oops/VideoLongformer_MLP/oops.unint_act.classification.layers3.attn_win32.time20211102-103443_cntr_loss/lr:0.000100~ep:50~bs:128~win:32~b_lr:1.000000~ptr:True_cntr_loss/val/top1/VideoLongformer_MLP__oops.unint_act.classification.layers3.attn_win32.time20211102-103443_cntr_loss_v0.7872_ep0.pth.tar'
-    opt.vtn_ptr_path = '/BS/unintentional_actions/work/storage/models/oops/VideoLongformer_MLP/oops.unint_act.classification.layers3.attn_win32.time20210901-095708_cntr_loss/lr:0.000200~ep:20~bs:128~win:32~b_lr:1.000000~ptr:True_cntr_loss/val/top1/VideoLongformer_MLP__oops.unint_act.classification.layers3.attn_win32.time20210901-095708_cntr_loss_v0.7426_ep1.pth.tar'
-    opt.vtn_ptr_path = '/BS/unintentional_actions/work/storage/models/oops/VideoLongformer_MLP/oops.unint_act.classification.layers3.attn_win32.time20211123-010540_trn_2x/lr:0.000100~ep:50~bs:128~win:32~b_lr:1.000000~ptr:True_cntr_loss/val/top1/VideoLongformer_MLP__oops.unint_act.classification.layers3.attn_win32.time20211123-010540_trn_2x_v0.7497_ep6.pth.tar'
-    opt.vtn_ptr_path = '/BS/unintentional_actions/work/storage/models/oops/VideoLongformer_MLP/oops.unint_act.classification.layers3.attn_win32.time20211116-111427_trn_2x/lr:0.000100~ep:50~bs:128~win:32~b_lr:1.000000~ptr:False_cntr_loss/val/top1/VideoLongformer_MLP__oops.unint_act.classification.layers3.attn_win32.time20211116-111427_trn_2x_v0.6964_ep46.pth.tar'
-    opt.vtn_ptr_path = '/BS/unintentional_actions/work/storage/models/all/Resnet3D18/all.rep_learning.tag:r3d_18.layers3.attn_win32.classes7.time20220130-032009/val/top1/Resnet3D18__all.rep_learning.tag:r3d_18.layers3.attn_win32.classes7.time20220130-032009_v0.5381_ep4.pth.tar'
-    opt.vtn_ptr_path = '/BS/unintentional_actions/work/storage/models/all/Resnet3D18/all.rep_learning.tag:r3d_18.layers3.attn_win32.classes7.time20220130-222258/val/top1/Resnet3D18__all.rep_learning.tag:r3d_18.layers3.attn_win32.classes7.time20220130-222258_v0.5075_ep0.pth.tar'
-
+    # opt.vtn_ptr_path = '/BS/unintentional_actions/work/storage/models/oops/VideoLongformer_MLP/oops.unint_act.classification.layers3.attn_win32.time20210901-095708_cntr_loss/lr:0.000200~ep:20~bs:128~win:32~b_lr:1.000000~ptr:True_cntr_loss/val/top1/VideoLongformer_MLP__oops.unint_act.classification.layers3.attn_win32.time20210901-095708_cntr_loss_v0.7426_ep1.pth.tar'
+    # opt.vtn_ptr_path = '/BS/unintentional_actions/work/storage/models/oops/VideoLongformer_MLP/oops.unint_act.classification.layers3.attn_win32.time20211123-010540_trn_2x/lr:0.000100~ep:50~bs:128~win:32~b_lr:1.000000~ptr:True_cntr_loss/val/top1/VideoLongformer_MLP__oops.unint_act.classification.layers3.attn_win32.time20211123-010540_trn_2x_v0.7497_ep6.pth.tar'
+    # opt.vtn_ptr_path = '/BS/unintentional_actions/work/storage/models/oops/VideoLongformer_MLP/oops.unint_act.classification.layers3.attn_win32.time20211116-111427_trn_2x/lr:0.000100~ep:50~bs:128~win:32~b_lr:1.000000~ptr:False_cntr_loss/val/top1/VideoLongformer_MLP__oops.unint_act.classification.layers3.attn_win32.time20211116-111427_trn_2x_v0.6964_ep46.pth.tar'
+    # opt.vtn_ptr_path = '/BS/unintentional_actions/work/storage/models/all/Resnet3D18/all.rep_learning.tag:r3d_18.layers3.attn_win32.classes7.time20220130-032009/val/top1/Resnet3D18__all.rep_learning.tag:r3d_18.layers3.attn_win32.classes7.time20220130-032009_v0.5381_ep4.pth.tar'
+    # opt.vtn_ptr_path = '/BS/unintentional_actions/work/storage/models/all/Resnet3D18/all.rep_learning.tag:r3d_18.layers3.attn_win32.classes7.time20220130-222258/val/top1/Resnet3D18__all.rep_learning.tag:r3d_18.layers3.attn_win32.classes7.time20220130-222258_v0.5075_ep0.pth.tar'
+    #
+    # opt.vtn_ptr_path = '/BS/unintentional_actions/work/storage/models/all/VideoLongformer/all.rep_learning.tag:warp.layers3.attn_win32.classes6.time20220205-211114/val/top1/VideoLongformer__all.rep_learning.tag:warp.layers3.attn_win32.classes6.time20220205-211114_v0.5955_ep63.pth.tar'
+    # opt.vtn_ptr_path = '/BS/unintentional_actions/work/storage/models/all/VideoLongformer/all.rep_learning.tag:shuffle_stage2.layers3.attn_win32.classes6.time20220208-092839/val/top1/VideoLongformer__all.rep_learning.tag:shuffle_stage2.layers3.attn_win32.classes6.time20220208-092839_v0.5198_ep97.pth.tar'
+    # opt.vtn_ptr_path = '/BS/unintentional_actions/work/storage/models/all/VideoLongformer/all.rep_learning.tag:random_point_speedup_stage2.layers3.attn_win32.classes6.time20220205-215811/val/top1/VideoLongformer__all.rep_learning.tag:random_point_speedup_stage2.layers3.attn_win32.classes6.time20220205-215811_v0.5131_ep97.pth.tar'
+    # opt.vtn_ptr_path = '/BS/unintentional_actions/work/storage/models/all/VideoLongformer/all.rep_learning.tag:double_flip_stage2.layers3.attn_win32.classes6.time20220206-145727/val/top1/VideoLongformer__all.rep_learning.tag:double_flip_stage2.layers3.attn_win32.classes6.time20220206-145727_v0.5979_ep59.pth.tar'
+    opt.vtn_ptr_path = '/BS/unintentional_actions/work/storage/models/all/Resnet3D18/all.rep_learning.tag:r3d_18.layers3.attn_win32.classes7.time20220226-184715/val/top1/Resnet3D18__all.rep_learning.tag:r3d_18.layers3.attn_win32.classes7.time20220226-184715_v0.6551_ep13.pth.tar'
+    opt.vtn_ptr_path = '/BS/unintentional_actions/work/storage/models/oops/VideoLongformer_MLP/oops.unint_act.classification.layers3.attn_win32.time20220301-231812_trn_2x/lr:0.000100~ep:50~bs:128~win:32~b_lr:1.000000~ptr:True_cntr_loss/val/top1/VideoLongformer_MLP__oops.unint_act.classification.layers3.attn_win32.time20220301-231812_trn_2x_v0.6633_ep0.pth.tar'
+    opt.vtn_ptr_path = '/BS/unintentional_actions/work/storage/models/all/VideoLongformer/all.rep_learning.tag:speedx3.layers3.attn_win32.classes6.time20220307-113444/val/top1/VideoLongformer__all.rep_learning.tag:speedx3.layers3.attn_win32.classes6.time20220307-113444_v0.5592_ep55.pth.tar'
+    opt.vtn_ptr_path = '/BS/unintentional_actions/work/storage/models/oops/VideoLongformer_MLP/oops.unint_act.classification.layers3.attn_win32.time20210828-214755_cntr_loss/lr:0.000100~ep:20~bs:128~win:32~b_lr:1.000000~ptr:True_cntr_loss/val/top1/VideoLongformer_MLP__oops.unint_act.classification.layers3.attn_win32.time20210828-214755_cntr_loss_v0.6525_ep0.pth.tar'
 
     # pretrained on contrastive loss
     opt.model_name = 'VideoLongformer_MLP'
@@ -161,7 +169,7 @@ def learn_representation():
     opt.weight_decay = 1e-4
     opt.test_freq = 1
     opt.save_model = 1
-    opt.multi_scale = True
+    opt.multi_scale = False
     pretrained = True    #################################################################################################
     opt.log_name = 'lr:%f~ep:%d~bs:%d~win:%d~b_lr:%f~ptr:%s_cntr_loss' % (opt.lr, opt.epochs, opt.batch_size,
                                                                 opt.attention_window[0], opt.backbone_lr_factor,
@@ -216,7 +224,7 @@ def learn_representation():
 
     if opt.dataset == 'oops':
         opt.batch_size = 8
-        opt.workers = 32
+        opt.workers = 16
         opt.balance_fails_only = False
         opt.all_fail_videos = False
         opt.load_videos = True
@@ -305,7 +313,7 @@ def plot_qual_results(nrm_cnf, trn_cnf, unrm_crf, vid_path):
 
 
 if __name__ == '__main__':
-    # os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+    # os.environ['CUDA_VISIBLE_DEVICES'] = '0 1 2 3'
     learn_representation()
 
     # nrm_cnf = [0.9, 0.85, 0.88, 0.97, 0.86, 0.01, 0.05, 0.09, 0.00, 0.02, 0.02, 0.01]

@@ -24,8 +24,21 @@ from dataloaders.oops_loader import get_video_loader_frames
 # from models.vit import create_vit_model
 # from utils.logging_setup import logger
 import json
+import torchvision
+from torchvision import transforms
+from PIL import Image
 
 
+def _convert_image_to_rgb(image):
+    return image.convert("RGB")
+
+clip_transform = torchvision.transforms.Compose([
+    transforms.Resize(224, interpolation=Image.BICUBIC),
+    transforms.CenterCrop(224),
+    _convert_image_to_rgb,
+    transforms.ToTensor(),
+    transforms.Normalize(mean=(0.48145466, 0.4578275, 0.40821073), std=(0.26862954, 0.26130258, 0.27577711))
+])
 
 class SimpleOopsDataset(Dataset):
     def __init__(self, mode, fps, feature_level, spat_crop, norm_statistics,
@@ -44,12 +57,13 @@ class SimpleOopsDataset(Dataset):
             # self.base_video_path = '/BS/feat_augm/nobackup/oops/vit_features/%s' % mode
             self.base_video_path = '/BS/unintentional_actions/work/data/oops/vit_features/%s_normalised' % mode
         self.base_video_path_frames = '/BS/unintentional_actions/nobackup/oops/oops_dataset/oops_video/%s' % mode
-        csv_path = '/BS/unintentional_actions/work/data/oops/splits/%s.csv' % mode
+        csv_path = '/BS/unintentional_actions/work/data/oops/splits/%s_0.csv' % mode
         self.csv = pd.read_csv(csv_path)
         self.feature_level = feature_level
         self.spat_crop = spat_crop
         self.size = 112
-        self.norm = Normalize(mean=norm_statistics['mean'], std=norm_statistics['std'])
+        # self.norm = Normalize(mean=norm_statistics['mean'], std=norm_statistics['std'])
+        self.norm = Normalize(mean=[0.48145466, 0.4578275, 0.40821073], std=[0.26862954, 0.26130258, 0.27577711])
         self.spat_scale = spat_scale
         self.fps = fps
         self.training = True if mode == 'train' else False
@@ -337,8 +351,18 @@ class SimpleOopsDataset(Dataset):
 
     def _preprocess_video(self, tensor):
         tensor = tensor_to_zero_one(tensor)
-        # tensor = self.norm(tensor)
+        tensor = self.norm(tensor)
         return tensor
+
+    def _preprocess_video_clip(self, tensor):
+        new_images = []
+        for image in tensor:
+            try:
+                image = Image.fromarray(image)
+                new_images.append(clip_transform(image))
+            except Exception as e:
+                print(e)
+        return torch.stack(new_images, dim=0)
 
     def _get_raw_video(self, video_path):
         h, w = self._get_video_dim(video_path)
@@ -353,24 +377,24 @@ class SimpleOopsDataset(Dataset):
         cmd = cmd.filter('fps', fps=video_fps)
 
         if self.spat_crop:
-            if not self.training:
-                x = int((width - self.size) / 2.0)
-                y = int((height - self.size) / 2.0)
-                cmd = cmd.crop(x, y, self.size, self.size)
-                height, width = self.size, self.size
-            else:
-                if (width - self.size) // 2 <= 0:
-                    x = 0
-                else:
-                    x = np.random.randint(0, (width - self.size) // 2)
-
-                if (height - self.size) // 2 <= 0:
-                    y = 0
-                else:
-                    y = np.random.randint(0, (height - self.size) // 2)
-
-                cmd = cmd.crop(x, y, self.size, self.size)
-                height, width = self.size, self.size
+            # if not self.training:
+            x = int((width - self.size) / 2.0)
+            y = int((height - self.size) / 2.0)
+            cmd = cmd.crop(x, y, self.size * 2, self.size * 2)
+            height, width = self.size * 2, self.size * 2
+            # else:
+            #     if (width - self.size) // 2 <= 0:
+            #         x = 0
+            #     else:
+            #         x = np.random.randint(0, (width - self.size) // 2)
+            #
+            #     if (height - self.size) // 2 <= 0:
+            #         y = 0
+            #     else:
+            #         y = np.random.randint(0, (height - self.size) // 2)
+            #
+            # cmd = cmd.crop(x, y, height, width)
+            # height, width = self.size * 2, self.size * 2
 
         # if self.hflip:
         #     if np.random.rand() > 0.5:
@@ -378,10 +402,13 @@ class SimpleOopsDataset(Dataset):
 
         out, _ = (
             cmd.output('pipe:', format='rawvideo', pix_fmt='rgb24')
-                .run(capture_stdout=True, quiet=True)
+                .run(capture_stdout=True, quiet=True, capture_stderr=True)
         )
-
-        video = np.frombuffer(out, np.uint8).reshape([-1, height, width, 3])
+        try:
+            video = np.frombuffer(out, np.uint8).reshape([-1, height, width, 3])
+        except Exception as e:
+            # print(e)
+            pass
         video = torch.from_numpy(video.astype('float32'))
         video = video.permute(0, 3, 1, 2)
 
@@ -503,6 +530,7 @@ class SimpleOopsDataset(Dataset):
                     output['label'] = self.labels[video_idx][clip_idx]
             else:
                 video_path = ops.join(self.base_video_path, self.csv.iloc[idx]['filename'])
+                # print(video_path)
                 if video_path[-4:] != '.mp4' and opt.task == 'classification':
                     video_path += '.mp4'
                 if opt.task == 'classification':
@@ -516,7 +544,7 @@ class SimpleOopsDataset(Dataset):
         except Exception as e:
             # vid_clip_len = len(self.clips[video_idx])
             # vid_lbl_len = len(self.labels[video_idx])
-            print(self.csv.iloc[idx]['filename'])
+            print(e)
             return {'filename': self.csv.iloc[idx]['filename']}
 
         return output

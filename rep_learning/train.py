@@ -118,7 +118,6 @@ def train(**kwargs):
 
             if idx % 100 == 0 and idx > 0:
                 logger.debug('Loss: %f' % loss_meter.avg)
-                logger.debug('BCE Loss: %f' % bce_meter.avg)
             # if idx == 300:
             #     break
             # if opt.debug and idx == 10:

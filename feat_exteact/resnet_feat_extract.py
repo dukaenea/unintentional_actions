@@ -13,11 +13,11 @@ from torch.utils.data import DataLoader
 
 from models.resnet50 import build_resnet_50
 from models.resnet50_21k import create_resnet50_21k
-
+from models.resnet18 import create_resnet18
 
 def extract_resnet_features(dataset_name, mode):
     # feat_path = '/BS/unintentional_actions/work/data/%s/resnet_feats/full_kinetics/%s/' % (dataset_name, mode)
-    feat_path = '/BS/unintentional_actions/nobackup/oops/resnet_feats/%s_normalized/' % mode
+    feat_path = '/BS/unintentional_actions/nobackup/oops/resnet_feats/resnet_18/%s_normalized/' % mode
     # feat_path = '/BS/unintentional_actions/work/data/oops/resnet_feats/unlabeled/%s/' % mode
     # feat_path = '/BS/unintentional_actions/work/data/rareact/resnet_feats/positive_negative/%s' % mode
     if dataset_name == 'kinetics':
@@ -40,7 +40,8 @@ def extract_resnet_features(dataset_name, mode):
         shuffle=False
     )
     # model = build_resnet_50()
-    model = create_resnet50_21k(pretrained=True)
+    # model = create_resnet50_21k(pretrained=True)
+    model = create_resnet18()
     model.cuda()
     model.eval()
 
@@ -53,9 +54,10 @@ def extract_resnet_features(dataset_name, mode):
             # label_folder_path = os.path.join(feat_path, data['label_text'][0])
             # array_path = os.path.join(label_folder_path, data['video_name'][0]) + '.npz'
             array_path = os.path.join(feat_path, data['filename'][0].replace('mp4', 'npz'))
-            if os.path.isfile(array_path):
-                # print('Existing')
-                continue
+            # print(data['filename'])
+            # if os.path.isfile(array_path):
+            #     # print('Existing')
+            #     continue
             # print('Saving: %d' % idx)
             # use the number of frames as the batch size to feed to resnet
             output = model(frames.cuda())
@@ -82,4 +84,4 @@ def extract_resnet_features(dataset_name, mode):
 
 if __name__ == '__main__':
     # os.environ['CUDA_VISIBLE_DEVICES'] = '1'
-    extract_resnet_features('oops', 'train')
+    extract_resnet_features('oops', 'val')

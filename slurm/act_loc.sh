@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH -p gpu20
-#SBATCH -t 08:00:00
+#SBATCH -t 1-00:00:00
 #SBATCH -o /BS/unintentional_actions/nobackup/slurm_logs/act_loc-%j-1.out
 #SBATCH -e /BS/unintentional_actions/nobackup/slurm_logs/act_loc-err-%j-1.out
 #SBATCH --gres gpu:4

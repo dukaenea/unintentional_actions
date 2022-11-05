@@ -44,7 +44,6 @@ def train(**kwargs):
          mode='val',
          time=tst,
          epoch=-1)
-    # return
     # loss = torch.nn.CrossEntropyLoss(weight=torch.FloatTensor(
     #     [(19670 / 18069) + math.sqrt(1 / pca['acc_0']), (19670 / 4137) + math.sqrt(1 / pca['acc_1']),
     #      (19670 / 19670) + math.sqrt(1 / pca['acc_2'])]).cuda())
@@ -96,7 +95,23 @@ def train(**kwargs):
             if opt.backbone  == 'vit_longformer':
                 videos, _ = model(videos, position_ids, None, pnf, labels, local=True, multi_scale=opt.multi_scale)
             else:
-                videos = model(videos, position_ids, None, pnf, labels, local=True, multi_scale=opt.multi_scale)
+                if videos.shape[0] > 32:
+                    chunks = torch.split(videos, 32)
+                    v = []
+                    for chunk in chunks:
+                        chunk_len = -1
+                        if chunk.shape[0] < 4:
+                            chunk_len = chunk.shape[0]
+                            remaining = 4 - chunk.shape[0]
+                            pad = torch.zeros((remaining, chunk.shape[1], chunk.shape[2], chunk.shape[3], chunk.shape[4])).to(chunk.device)
+                            chunk = torch.cat((chunk, pad))
+                        out = model(chunk, position_ids, None, pnf, labels, local=True, multi_scale=opt.multi_scale)
+                        if chunk_len != -1:
+                            out = out[:chunk_len]
+                        v.append(out)
+                    videos = torch.cat(v, dim=0)
+                else:
+                    videos = model(videos, position_ids, None, pnf, labels, local=True, multi_scale=opt.multi_scale)
             if len(pure_nr_frames.shape) == 2:
                 pure_nr_frames = torch.t(pure_nr_frames)[0]
             if opt.multi_scale:
@@ -108,16 +123,16 @@ def train(**kwargs):
 
             if opt.use_crf:
                 videos = prep_for_crf(out, pure_nr_frames)
-                # if opt.crf_margin_probs:
-                #     out = model(videos, position_ids, None, pure_nr_frames, labels, num_clips, False, True)
-                #     out = out.reshape(out.shape[0]*out.shape[1], out.shape[2])
-                #     labels = labels.cuda().flatten()
-                #     mask = (labels != -1)
-                #     labels = labels[mask]
-                #     out = out[mask]
-                #     _loss = loss(out, labels)
-                # else:
-                _loss = model(videos, None  , None, pure_nr_frames, labels, None, False, True).mean()
+                if opt.crf_margin_probs:
+                    out = model(videos, position_ids, None, pure_nr_frames, labels, num_clips, False, True)
+                    out = out.reshape(out.shape[0]*out.shape[1], out.shape[2])
+                    labels = labels.cuda().flatten()
+                    mask = (labels != -1)
+                    labels = labels[mask]
+                    out = out[mask]
+                    _loss = loss(out, labels)
+                else:
+                    _loss = model(videos, None  , None, pure_nr_frames, labels, None, False, True).mean()
             else:
                 _loss = loss(out, labels.cuda())
             # except Exception as e:

@@ -1,0 +1,89 @@
+
+oops:
+  val: false
+  fails_path: '/BS/unintentional_actions/nobackup/oops/oops_dataset/oops_video'
+  fails_only: true
+  workers: 32
+  all_fail_videos: true
+  cache_dataset: true
+  fails_action_split: false
+  balance_fails_only: false
+  fps_list:
+    - 16
+  step_between_clips_sec: 0.25
+  anticipate_label: 0
+  remove_fns: 'None'
+  sample_all_clips: true
+  clips_per_video: 10
+  kinetics_path: '/BS/unintentional_actions/nobackup/kinetics400/data'
+  frames_per_clip: 16
+  clip_interval_factor: 1
+  dataset_path: '/BS/unintentional_actions/nobackup/oops'
+  local_rank: -1
+  sample_videos: false
+  selfsup_loss: None
+  load_videos: false
+general:
+  model_name: 'VideoLongformer'
+  sfx: ''
+  pfx: ''
+  crt_weight_training: false
+  gpu_parallel: true
+  backbone_lr_factor: 1
+  cos_decay_lr_factor: 0.01
+  pretrained: false
+  backbone: 'vit_longformer'
+longformer:
+  embed_dim: 768
+  max_positions_embedding: 7200
+  num_attention_heads: 16
+  num_hidden_layers: 3
+  attention_mode: 'sliding_chunks'
+  pad_token_id: -1
+  attention_window:
+    - 32
+    - 32
+    - 32
+  intermediate_size: 3072
+  attention_probs_dropout_prob: 0.1
+  hidden_dropout_prob: 0.1
+  hidden_dim: 768
+  mlp_dropout: 0.2
+  mlp_dim: 1024
+  num_classes: 7
+  vtn_ptr_path: ''
+  use_crf: false
+  spat_temp: false
+  multi_scale: false
+representation_learning:
+  dataset: 'all'
+  rep_data_level: 'features'
+  rep_backbone: 'vit'
+  speed_and_motion: true
+  tag: 'speedx2'
+  transformation_groups: 'speed&motion'
+  transformations_list:
+    -'normal'
+    -'speedx3'
+    -'speedx4'
+    -'random_point_speedup'
+    -'double_flip'
+    -'shuffle'
+    -'warp'
+train:
+  test: true
+  save_model: 1
+  test_val: true
+  epochs: 100
+  use_tqdm: true
+  contrastive_loss: false
+  rep_learning: true
+  optim: 'adam'
+  lr: 0.0001
+  weight_decay: 0.0001
+  test_freq: 1
+  batch_size: 128
+  num_workers: 32
+
+vizdom:
+  viz: false

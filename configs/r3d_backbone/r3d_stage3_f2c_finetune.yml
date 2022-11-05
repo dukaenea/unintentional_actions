@@ -23,6 +23,7 @@ oops:
   sample_videos: false
   selfsup_loss: None
   load_videos: false
+  get_clip_times: True
 general:
   model_name: 'Resnet3D18'
   sfx: ''
@@ -51,9 +52,9 @@ longformer:
   mlp_dropout: 0.2
   mlp_dim: 256
   num_classes: 3
-  num_classes_ptr: 8
+  num_classes_ptr: 3
   vtn_ptr_path: ''
-  resnet_ptr_path: '/BS/unintentional_actions/work/storage/models/all/Resnet3D18/val/top1/Resnet3D18___v0.4258_ep2.pth.tar'
+  resnet_ptr_path: '/BS/unintentional_actions/work/storage/models/oops/Resnet3D18/oops.unint_act.classification.layers3.attn_win32.time20220222-135053_cntr_loss/lr:0.000100~ep:30~bs:256~win:32~b_lr:1.000000~ptr:True_cntr_loss/val/top1/Resnet3D18__oops.unint_act.classification.layers3.attn_win32.time20220222-135053_cntr_loss_v0.6164_ep24.pth.tar'
   use_crf: false
   spat_temp: false
   multi_scale: false
@@ -77,7 +78,7 @@ train:
   test: true
   save_model: 1
   test_val: true
-  epochs: 100
+  epochs: 30
   use_tqdm: true
   contrastive_loss: false
   rep_learning: false
@@ -85,7 +86,7 @@ train:
   lr: 0.0001
   weight_decay: 0.00001
   test_freq: 1
-  batch_size: 128
+  batch_size: 64
   num_workers: 32
   workers: 16
 
