@@ -7,17 +7,13 @@ import copy
 from tqdm import tqdm
 from datetime import datetime
 from action_classification.test import test
-from utils.util_functions import label_idx_to_one_hot, adjust_lr, AIAYNScheduler
+from utils.util_functions import AIAYNScheduler
 from utils.model_saver import ModelSaver
 from utils.util_functions import Meter
 from utils.logging_setup import logger
 from utils.arg_parse import opt
 from utils.util_functions import lr_func_cosine
-from utils.util_functions import Precision
 from transformer2x.trn_utils import prep_for_local, prep_for_crf
-import math
-
-from models.pm_vtn import freeze_model, unfreeze_model
 
 
 def train(**kwargs):
@@ -47,12 +43,9 @@ def train(**kwargs):
     )  # 10% of the steps for the warmup
 
     test(model=model, loss=loss, dataloader=val_loader, mode="val", time=tst, epoch=-1)
-    logger.debug(str(loss.weight))
+    # logger.debug(str(loss.weight))
 
     logger.debug("Starting training for %d epochs:" % opt.epochs)
-    new_lr = opt.lr
-    prec = Precision("train")
-    # frozen_param_names = freeze_model(model)
 
     for epoch in range(s_epoch, opt.epochs):
         model.train()
@@ -102,7 +95,6 @@ def train(**kwargs):
                         .expand(1, videos.shape[1])
                         .repeat(videos.shape[0], 1)
                     )
-                    # videos = videos.mean(1).squeeze()
                     out = model(
                         videos,
                         position_ids,
@@ -113,21 +105,10 @@ def train(**kwargs):
                 else:
                     out = model(videos)
 
-                # next_frames = data['next_frame']
-                # try:
                 _loss = loss(out, labels.cuda())
-            # except Exception as e:
-            # pass
-            # else:
-            # _loss = mmargin_contrastive_loss(out_c, labels.cuda())
-            # ce_loss = loss(out, labels.cuda())
-            # _loss = 10 * _loss + ce_loss
-            #     # _loss = loss(out, labels.cuda())
 
             loss_meter.update(_loss.item(), videos.shape[0])
-            # prec.update_probs_reg(out, labels.cuda(), lengths.cuda())
-            # a = model.module.temporal_encoder.encoder.layer[0].output.dense.weight
-            # logger.debug(str(a))
+
             _loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1)
             optimizer.step()

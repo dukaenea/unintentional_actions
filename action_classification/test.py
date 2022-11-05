@@ -3,7 +3,7 @@
 
 import torch
 
-from utils.util_functions import Precision, label_idx_to_one_hot
+from utils.util_functions import Precision
 from tqdm import tqdm
 from utils.logging_setup import viz
 from utils.plotting_utils import visdom_plot_losses
@@ -25,10 +25,6 @@ def test(**kwargs):
     model.eval()
     prec = Precision(mode)
     meter = Meter(mode=mode, name="loss")
-    if opt.task == "regression":
-        out_dist_plotter = DistributionPlotter()
-    preds = []
-    lbls = []
     outputs = {}
 
     with torch.no_grad():
@@ -57,7 +53,6 @@ def test(**kwargs):
                 else:
                     out, _loss = model(videos, labels=labels, for_crf=True)
                 _loss = _loss.mean()
-                # out = torch.cat(out, dim=0)
                 labels = labels.flatten()
                 mask = labels != -1
                 labels = labels[mask]
@@ -69,7 +64,6 @@ def test(**kwargs):
                         .expand(1, videos.shape[1])
                         .repeat(videos.shape[0], 1)
                     )
-                    # videos = videos.mean(1).squeeze()
                     out = model(
                         videos,
                         position_ids,
@@ -80,49 +74,19 @@ def test(**kwargs):
                 else:
                     out = model(videos)
 
-                # next_frames = data['next_frame']
-                # if labels.shape[0] == 1:
-                #     labels = labels.squeeze()
-                # else:
-                #     labels = labels.flatten()
-                # mask = (labels != -1)
-                # labels = labels[mask]
-                # labels = labels.type(torch.long)
-                # if labels.shape[0] == 1:
-                #     labels = labels.squeeze()
-                # if opt.mmargin_loss:
                 _loss = loss(out, labels.cuda())
-            # for o in out.cpu().squeeze():
-            #     preds.append(o)
-            # for l in labels.type(torch.float32):
-            #     lbls.append(l)
-            # else:
-            # _loss = mmargin_contrastive_loss(out_c, labels.cuda())
-            # ce_loss = loss(out, labels.cuda())
-            # _loss = 10 * _loss + ce_loss
-            # _loss = loss(out, labels.cuda())
+
             meter.update(_loss.item(), videos.shape[0])
-            # if not opt.mmargin_loss:
             if opt.use_crf:
                 prec.update_probs_crf(out, labels.cuda())
             else:
                 prec.update_probs_sfx(
                     out, labels.cuda(), report_pca=False, num_classes=3
                 )
-            # if idx % 100 == 0:
-            #     meter.log()
-            #     logger.debug('VAL Acc: %f' % prec.top1())
-            # logger.debug(str(torch.abs(out).sum(1).sum(0)))
-            # if idx == 50:
-            #     break
+
             outputs = keep_relevant_outs(out, data, outputs)
         print(total)
         meter.log()
-        # auc, eer = prec.calculate_auc(preds, lbls)
-        # logger.debug('AUC: %f' % auc)
-        # logger.debug('EER: %f' % eer)
-        # if opt.task == 'regression':
-        #     out_dist_plotter.plot_out_dist()
         if opt.viz and epoch % opt.viz_freq == 0:
             visdom_plot_losses(
                 viz.env,
@@ -131,7 +95,6 @@ def test(**kwargs):
                 xylabel=("epoch", "loss"),
                 **meter.viz_dict()
             )
-            # if not opt.mmargin_loss:
             visdom_plot_losses(
                 viz.env,
                 opt.log_name + "-prec-" + str(time_id),
@@ -151,9 +114,7 @@ def test(**kwargs):
                 }
             )
         calc_acc(outputs)
-    # if not opt.mmargin_loss:
     logger.debug("Val Acc: %f" % prec.top1(report_pca=False))
-    # return {'top1': (1 / meter.avg)}
     return {"top1": prec.top1()}
 
 
@@ -166,8 +127,6 @@ def keep_relevant_outs(out, data, outputs):
     for idx, video_idx in enumerate(video_indexes):
         o = out[idx]
         o = torch.softmax(o, dim=0)
-        # if torch.argmax(o) != 1:
-        #     continue
 
         if video_idx.item() not in outputs.keys():
             outputs[video_idx.item()] = {
@@ -196,7 +155,6 @@ def calc_acc(outs):
     worst_for_vis = None
     for key, value in outs.items():
         time = value["time"]
-        # time = torch.median(time)
         rel_t = value["rel_time"]
         if not 0.01 <= torch.median(rel_t).item() <= 0.99:
             print("Outlier")
@@ -210,10 +168,6 @@ def calc_acc(outs):
                 f_time = clip["f_time"]
 
         total += 1
-        # if time.size() == 0:
-        # if abs(f_time - time) <= 1:
-        #     correct += 1
-        # # else:
         acc_cls = (100 * (min(abs(f_time - t) for t in time) <= 1.0)).item()
         accs.append(acc_cls)
         if min(abs(f_time - t) for t in time) <= 0.25:
@@ -242,5 +196,3 @@ def calc_acc(outs):
     print(best_for_vis)
     print("Acc Val 0.25: %f" % (correct_tf / total))
     print("Acc Val 1.00: %f" % (correct_one / total))
-    # print('mean accuracy: {0:4} +- {1:4}'.format(
-    #         statistics.mean(accs), statistics.stdev(accs)))
