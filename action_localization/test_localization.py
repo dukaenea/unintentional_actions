@@ -7,10 +7,8 @@
 
 import torch
 
-from utils.util_functions import Precision, label_idx_to_one_hot
+from utils.util_functions import Precision
 from tqdm import tqdm
-from utils.logging_setup import viz
-from utils.plotting_utils import visdom_plot_losses
 from utils.util_functions import Meter
 from utils.arg_parse import opt
 from utils.logging_setup import logger
@@ -77,15 +75,8 @@ def test(**kwargs):
             labels = data["label"].squeeze()
             all_outs.extend(list(out.detach().cpu()))
             all_labels.extend(labels)
-            # # if idx == 100:
-            # #     break
-            # continue
-            # trn_times = data['t']
-            # clip_boundries = data['clip_time_boarders'].squeeze()
             _loss = loss(out, labels.cuda())
 
-            # if idx % 200 == 0 and idx > 0:
-            #     logger.debug('Val Acc: %f' % prec.top1())
             for o in out:
                 o = torch.softmax(o, dim=0)
                 total += 1
@@ -102,7 +93,6 @@ def test(**kwargs):
 
             meter.update(_loss.item(), videos.shape[0])
             prec.update_probs_sfx(out, labels.cuda(), report_pca=True, num_classes=3)
-            # prec.update_probs_loc_class(out, labels.cuda(), trn_times.cuda(), clip_boundries.cuda())
 
             outputs = keep_relevant_outs(out, data, outputs)
         # all_outs = [o.numpy() for o in all_outs]
@@ -119,15 +109,6 @@ def test(**kwargs):
         logger.debug("Val Acc: %f" % prec.top1(report_pca=True))
         calc_acc(outputs)
         plot_vis_dicts(vis_dict)
-        # if opt.task == 'regression':
-        #     out_dist_plotter.plot_out_dist()
-    #     if opt.viz and epoch % opt.viz_freq == 0:
-    #         visdom_plot_losses(viz.env, opt.log_name + '-loss-' + str(time_id), epoch,
-    #                            xylabel=('epoch', 'loss'), **meter.viz_dict())
-    #         visdom_plot_losses(viz.env, opt.log_name + '-prec-' + str(time_id), epoch,
-    #                            xylabel=('epoch', 'prec@1'), **{'pr@1/%s' % mode.upper():  prec.top1()})
-    # logger.debug('Val Acc: %f' % prec.top1())
-    # return {'top1': prec.top1()}
 
 
 def keep_relevant_outs(out, data, outputs):
@@ -215,11 +196,6 @@ def calc_acc(outs):
             statistics.mean(accs), statistics.stdev(accs)
         )
     )
-
-    # print(str(best_for_vis))
-    # print(str(worst_for_vis))
-    # visualize_perdiction(best_for_vis['video_name'], best_for_vis['g_trn'], best_for_vis['p_trn'])
-    # visualize_perdiction(worst_for_vis['video_name'], worst_for_vis['g_trn'], worst_for_vis['p_trn'])
 
 
 def plot_vis_dicts(vis_dict):
@@ -310,20 +286,5 @@ def plot_video_scores(scores, times, video_name):
         dpi=1000,
     )
     plt.clf()
-    # plt.legend(['Intentional', 'Transitional', 'Unintentional'], loc='lower right')
-    # plt.show()
-    # f = interp1d(x, trn_cnf, kind='quadratic')
-    # trn_cnf = f(x)
-    #
-    # plt.plot(x, nrm_cnf, lw=1, color='#61c46e')
-    # plt.fill_between(x, 0, nrm_cnf, alpha=0.3, facecolor='#61c46e')
-    # plt.plot(x, trn_cnf, lw=1, color='#f6ed22')
-    # plt.fill_between(x, 0, trn_cnf, alpha=0.3, facecolor='#f6ed22')
-    # plt.plot(x, unrm_cnf, lw=1, color='#f15a24')
-    # plt.fill_between(x, 0, unrm_cnf, alpha=0.3, facecolor='#f15a24')
-    # plt.axvline(x=t)
-    # plt.xlabel('Time (sec)')
-    # plt.ylabel('Prediction confidence')
-    # plt.show()
 
     return x
