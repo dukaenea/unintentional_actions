@@ -15,15 +15,6 @@ class R3D18(nn.Module):
         super(R3D18, self).__init__()
 
         self.backbone = r3d_18(pretrained=pretrain_backbone)
-
-        # self.backbone.fc = nn.Sequential(
-        #     nn.Linear(opt.hidden_dim, opt.mlp_dim),
-        #     nn.BatchNorm1d(opt.mlp_dim),
-        #     nn.GELU(),
-        #     nn.Dropout(opt.mlp_dropout),
-        #     nn.Linear(opt.mlp_dim, opt.num_classes if opt.num_classes_ptr is None else opt.num_classes_ptr),
-        # )
-
         self.backbone.fc = IdentityLayer()
 
         if opt.use_crf:
@@ -85,8 +76,8 @@ def create_r3d(pretrained):
             model_dict = saved_model["state_dict"]
             model.load_state_dict(model_dict, strict=True)
             model.module.cuda()
-            # if opt.gpu_parallel:
-            #     model = nn.parallel.DistributedDataParallel(model.module)
+            if opt.gpu_parallel:
+                model = nn.parallel.DistributedDataParallel(model.module)
 
     if opt.optim == "adam":
         if opt.rep_learning:

@@ -6,13 +6,8 @@ import transformers
 import torch.nn as nn
 import torch.nn.functional as F
 from utils.logging_setup import logger
-from models.parametric_memory import IncrementalParametricMemory
 from torch.autograd import Function
-from models.prototypical_memory import PrototypicalMemory
-from models.vit import create_vit_model
-from timm.models.vision_transformer import vit_base_patch16_224
 
-# from utils.util_functions import mil_objective
 from torchcrf import CRF
 from itertools import chain
 from utils.arg_parse import opt
@@ -77,16 +72,6 @@ def pad_to_window_size_local(
     return input_ids, attention_mask, position_ids
 
 
-class GradientReversal(Function):
-    @staticmethod
-    def forward(ctx, x):
-        return x.view_as(x)
-
-    @staticmethod
-    def backward(ctx, grad_output):
-        return grad_output.neg()
-
-
 class VTN(nn.Module):
     def __init__(self):
         super(VTN, self).__init__()
@@ -115,23 +100,10 @@ class VTN(nn.Module):
             hidden_dropout_prob=opt.hidden_dropout_prob,
         )
 
-        # self.high_order_temporal_encoder = VTNLongformerModel(
-        #     embed_dim=opt.embed_dim,
-        #     max_positions_embedding=opt.max_positions_embedding,
-        #     num_attention_heads=opt.num_attention_heads,
-        #     num_hidden_layers=1,
-        #     attention_mode=opt.attention_mode,
-        #     pad_token_id=opt.pad_token_id,
-        #     attention_window=[8],
-        #     intermediate_size=opt.intermediate_size,
-        #     attention_probs_dropout_prob=opt.attention_probs_dropout_prob,
-        #     hidden_dropout_prob=opt.hidden_dropout_prob
-        # )
-
         self.mlp_head = nn.Sequential(
             nn.LayerNorm(opt.hidden_dim),
             nn.Linear(opt.hidden_dim, opt.mlp_dim),
-            # nn.BatchNorm1d(opt.mlp_dim),
+            nn.BatchNorm1d(opt.mlp_dim),
             nn.GELU(),
             nn.Dropout(opt.mlp_dropout),
             nn.Linear(
@@ -141,30 +113,6 @@ class VTN(nn.Module):
                 else opt.num_classes,
             ),
         )
-
-        # self.bc_head = nn.Sequential(
-        #     nn.LayerNorm(opt.hidden_dim),
-        #     nn.Linear(opt.hidden_dim, opt.mlp_dim),
-        #     # nn.BatchNorm1d(opt.mlp_dim),
-        #     nn.GELU(),
-        #     nn.Dropout(opt.mlp_dropout),
-        #     nn.Linear(opt.mlp_dim, 1),
-        #     nn.Sigmoid()
-        # )
-
-        # self.mem_head = nn.Linear(opt.hidden_dim*2, opt.hidden_dim)
-        # self.frame_mem_head = nn.Linear(opt.hidden_dim*2, opt.hidden_dim)
-        # self.tanh = nn.Tanh()
-        # self.domain_classifier = nn.Sequential(
-        #     nn.LayerNorm(opt.hidden_dim),
-        #     nn.Linear(opt.hidden_dim, opt.mlp_dim),
-        #     nn.GELU(),
-        #     nn.Dropout(opt.mlp_dropout),
-        #     nn.Linear(opt.mlp_dim, opt.num_classes)
-        # )
-        #
-        # self.memory = IncrementalParametricMemory(1024, opt.embed_dim)
-        # self.frame_memory = IncrementalParametricMemory(1024, opt.embed_dim)
 
     def forward(
         self,
@@ -183,31 +131,18 @@ class VTN(nn.Module):
         if classifier_only:
             x = self.mlp_head(x)
             return x
-        #
-        # ORG_BATCH = None
+
         if len(x.shape) == 4:
             B, CL, F, C = x.shape
-            ORG_BATCH = B
             x = x.reshape(B * CL, F, C)
             position_ids = position_ids.reshape(B * CL, F)
             pure_nr_frames = pure_nr_frames.flatten()
 
         if len(x.shape) == 5:
             B, F, C, H, W = x.shape
-            # x = x.permute(0, 2, 1, 3, 4)
             x = x.reshape(B * F, C, H, W)
             x = self.backbone(x)
-            # mem_values = self.frame_memory(x)
-            # x = torch.cat((x, mem_values), dim=1)
-            # x = self.frame_mem_head(x)
             x = x.reshape(B, F, -1)
-        #
-        # if backbone_feats_only:
-        #     return x
-        #
-        # if backbone_only:
-        #     x = self.mlp_head(x)
-        #     return x
         if for_crf:
             # create the mask for the CRF layer
             crf_mask = torch.ones((x.shape[0], x.shape[1]), dtype=torch.uint8).to(
@@ -264,74 +199,10 @@ class VTN(nn.Module):
         x = x["last_hidden_state"]
         x = x[:, 0]
 
-        # if high_order_temporal_features:
-        #     if ORG_BATCH is not None:
-        #         seq_len = x.shape[0] // ORG_BATCH
-        #         x = torch.stack(list(x.split(seq_len)), dim=0)
-        #     # x = x_bc.unsqueeze(0)
-        #     # B = 1
-        #     B, D, E = x.shape
-        #     attention_mask = torch.ones((B, D), dtype=torch.long, device=x.device)
-        #     # cls_token = self.hl_cls_token.expand(B, -1, -1)
-        #     # x = torch.cat((cls_token, x), dim=1)
-        #     # cls_attn = torch.ones((1)).expand(B, -1).to(x.device)
-        #     # attention_mask = torch.cat((attention_mask, cls_attn), dim=1)
-        #     # attention_mask[:, 0] = 2
-        #     if ORG_BATCH is not None:
-        #         position_ids = torch.arange(0, D).repeat(ORG_BATCH, 1).to(x.device)
-        #
-        #     x, attention_mask, position_ids = pad_to_window_size_local(
-        #         x,
-        #         attention_mask,
-        #         position_ids,
-        #         self.high_order_temporal_encoder.config.attention_window[0],
-        #         self.high_order_temporal_encoder.config.pad_token_id
-        #     )
-        #     token_type_ids = torch.zeros(x.size()[:-1], dtype=torch.long, device=x.device)
-        #     # token_type_ids[:, 0] = 1
-        #
-        #     mask = attention_mask.ne(0).int()
-        #     max_position_embeddings = self.temporal_encoder.config.max_position_embeddings
-        #     position_ids = position_ids % (max_position_embeddings - 2)
-        #     position_ids[:, 0] = max_position_embeddings - 2
-        #     position_ids = position_ids[:, 1:]
-        #     position_ids[mask == 0] = max_position_embeddings - 1
-        #
-        #     x = self.high_order_temporal_encoder(input_ids=None,
-        #                                           attention_mask=attention_mask,
-        #                                           token_type_ids=token_type_ids,
-        #                                           position_ids=position_ids,
-        #                                           inputs_embeds=x,
-        #                                           output_attentions=None,
-        #                                           output_hidden_states=True,
-        #                                           return_dict=True)
-        #
-        #     x = x['last_hidden_state']
-        #     x = x[:, :pure_nr_frames[0]]
-        #     # x = x.reshape(x.shape[0] * x.shape[1], x.shape[2])
-        #     # x = x.reshape(x.shape[0]*x.shape[1], x.shape[2])
-        #
-
-        # at this point we have the embeddings of the clips
-        # we use the embeddings as queries for the memory
-        # mem_values = self.memory(x)
-        # x = torch.cat((x, mem_values), dim=1)
-        # x = self.mem_head(x)
-        # x = F.sigmoid(x)
         if return_features:
-            # x = torch.tanh(x)
-            # x = F.relu(x)
-            # x = F.sigmoid(x)
             return x
         x_mlp = self.mlp_head(x)
-        # x_bc = self.bc_head(x)
-        # x_mlp_dom = self.grad_reverse(x)
-        # x_mlp_dom = self.domain_classifier(x_mlp_dom)
-        # x_bc = torch.stack(list(torch.split(x_bc, pure_nr_frames[0])), dim=0).squeeze()
         return x_mlp
-
-    def grad_reverse(self, x):
-        return GradientReversal.apply(x)
 
     def reinit_mlp(self, num_classes):
         if opt.task == "classification":
@@ -343,15 +214,6 @@ class VTN(nn.Module):
                 nn.Dropout(opt.mlp_dropout),
                 nn.Linear(opt.mlp_dim, num_classes),
             )
-            # self.bc_head = nn.Sequential(
-            #     nn.LayerNorm(opt.hidden_dim),
-            #     nn.Linear(opt.hidden_dim, opt.mlp_dim),
-            #     # nn.BatchNorm1d(opt.mlp_dim),
-            #     nn.GELU(),
-            #     nn.Dropout(opt.mlp_dropout),
-            #     nn.Linear(opt.mlp_dim, 1),
-            #     nn.Sigmoid()
-            # )
         else:
             self.mlp_head = nn.Sequential(
                 nn.LayerNorm(opt.hidden_dim),
@@ -368,9 +230,6 @@ class VTN(nn.Module):
             if name == "temporal_encoder":
                 for param in child.parameters():
                     param.requires_grad = False
-
-    def expand_memory(self, expand_size):
-        self.memory.expand_memory(expand_size)
 
 
 def get_froze_trn_optimizer(model):
@@ -426,18 +285,6 @@ def create_model(num_classes=None, pretrained=False):
     # part_freeze_vit(model)
     # freeze_model(model)
     if opt.optim == "adam":
-
-        # if opt.rep_learning:
-        # optimizer = torch.optim.AdamW([{'params': model.module.cls_token, 'lr': opt.lr * 0},
-        #                                {'params': model.module.temporal_encoder.parameters(), 'lr': opt.lr * 0},
-        #                                # {'params': model.module.high_order_temporal_encoder.parameters(), 'lr': opt.lr},
-        #                                {'params': model.module.backbone.parameters(), 'lr': opt.lr * 0},
-        #                                {'params': model.module.mlp_head.parameters(), 'lr': opt.lr},
-        #                                {'params': model.module.crf.parameters(), 'lr': opt.lr}
-        #                                # {'params': model.module.bc_head.parameters(), 'lr': opt.lr}],
-        #                                ],
-        #                               weight_decay=opt.weight_decay)
-        # else:
         optimizer = torch.optim.AdamW(
             model.parameters(), opt.lr, weight_decay=opt.weight_decay
         )
@@ -447,19 +294,10 @@ def create_model(num_classes=None, pretrained=False):
             model.parameters(), lr=opt.lr, momentum=opt.momentum
         )
 
-    # if opt.dataset == 'kinetics':
     if opt.task == "classification":
-        # loss = nn.CrossEntropyLoss(weight=torch.FloatTensor([0.25, 0.4, 0.25]).cuda())ss
         loss = nn.CrossEntropyLoss()
-        # loss = nn.BCELoss()
-        # loss = nn.MSELoss(reduction='sum')
     elif opt.task == "regression":
-        # loss = nn.MSELoss(reduction='sum')
         loss = nn.SmoothL1Loss(beta=0.01, reduction="sum")
-        # loss = RegressionLoss()
-
-    # elif opt.dataset == 'oops':
-    #     loss = nn.BCEWithLogitsLoss()
 
     logger.debug(str(model))
     logger.debug(str(optimizer))
@@ -500,76 +338,3 @@ def unfreeze_model(model, frozen_param_names):
     for param in model.named_parameters():
         if param[0] in frozen_param_names:
             param[1].requires_grad = True
-
-
-class MILRegLoss(nn.Module):
-    def __init__(self, model, lambdas=0.001):
-        super(MILRegLoss, self).__init__()
-
-        self.lambdas = lambdas
-        self.model = model
-
-    def forward(self, y_pred, y_true):
-
-        # fc1_params = torch.cat(tuple([x.view(-1) for x in self.model.module.bc_head.layer[1].parameters()]))
-        # fc2_params = torch.cat(tuple([x.view(-1) for x in self.model.module.bc_head.layer[4].parameters()]))
-
-        loss_reg = 0
-        # for param in self.model.parameters():
-        #     print(param)
-
-        # l1_reg = self.lambdas * torch.norm(fc1_params, p=2)
-        # l2_reg = self.lambdas * torch.norm(fc2_params, p=2)
-        #
-        return self.mil_objective(y_pred, y_true)
-
-    def mil_objective(self, y_pred, y_true):
-        labmdas = 8e-5
-        y_true = y_true.reshape(y_true.shape[0] * y_true.shape[1])
-        normal_labels_idx = y_true == 0
-        anom_labels_idx = y_true == 1
-
-        y_pred = y_pred.squeeze()
-        y_pred = y_pred.reshape(y_pred.shape[0] * y_pred.shape[1], y_pred.shape[2])
-        normal_vid_sc = y_pred[normal_labels_idx].squeeze()
-        anomal_vid_sc = y_pred[anom_labels_idx].squeeze()
-
-        # normal_vid_sc = y_pred[:batch_size].squeeze()
-        # anomal_vid_sc = y_pred[batch_size:].squeeze()
-
-        # normal_vid_sc = torch.stack(list(torch.split(normal_vid_sc, 10))).mean(1).squeeze()
-        # anomal_vid_sc = torch.stack(list(torch.split(anomal_vid_sc, 10))).mean(1).squeeze()
-
-        # normal_segs_max_scores = normal_vid_sc.mean(dim=-1)
-        # anomal_segs_max_scores = anomal_vid_sc.mean(dim=-1)
-        # hinge_loss = 1 - torch.max(torch.zeros_like(anomal_segs_max_scores), anomal_segs_max_scores - normal_segs_max_scores)
-
-        normal_segs_max_scores = normal_vid_sc.max(dim=-1)[0]
-        normal_segs_min_scores = normal_vid_sc.min(dim=-1)[0]
-
-        # anomal_segs_max_scores = anomal_vid_sc.max(dim=-1)[0]
-        anomal_segs_min_scores = anomal_vid_sc.min(dim=-1)[0]
-
-        # normal_segs_max_scores = torch.topk(normal_vid_sc, 3, dim=1)[0].mean(1)
-        anomal_segs_max_scores = torch.topk(anomal_vid_sc, 1, dim=1)[0].mean(1)
-        # anomal_segs_min_scores = torch.topk(anomal_vid_sc, k=(32-3), dim=1, largest=False)[0].mean(1)
-
-        hinge_loss = 1 - anomal_segs_max_scores + normal_segs_max_scores
-        hinge_loss = torch.max(hinge_loss, torch.zeros_like(hinge_loss))
-
-        hinge_loss_ab = 1 - anomal_segs_max_scores + anomal_segs_min_scores
-        hinge_loss_ab = torch.max(hinge_loss_ab, torch.zeros_like(hinge_loss_ab))
-
-        loss_nb = torch.abs(normal_segs_max_scores - normal_segs_min_scores)
-
-        smoothed_scores = anomal_vid_sc[:, 1:] - anomal_vid_sc[:, :-1]
-        smoothed_scores_ss = smoothed_scores.pow(2).sum(dim=-1)
-
-        sparsity_loss = anomal_vid_sc.sum(dim=-1)
-        # an_sp_loss = (anomal_segs_max_scores - anomal_segs_min_scores).mean()
-
-        final_loss = (
-            hinge_loss + labmdas * smoothed_scores_ss + labmdas * sparsity_loss
-        ).mean()
-
-        return final_loss

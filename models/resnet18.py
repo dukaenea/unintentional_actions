@@ -15,20 +15,15 @@ class ResNet18(nn.Module):
         return self.backbone(x)
 
 
-def create_resnet18(pretrained=False):
+def create_resnet18(model_pretrain_path=None):
     model = ResNet18()
 
-    # if pretrained:
-    #     saved_model = torch.load('/BS/unintentional_actions/nobackup/pretrained_models/resnet/resnet50_miil_21k.pth')
-    #     state_dict = saved_model['state_dict']
-    #     model.backbone.load_state_dict(state_dict, strict=False)
+    if model_pretrain_path:
+        saved_model = torch.load(model_pretrain_path)
+        state_dict = saved_model["state_dict"]
+        model.backbone.load_state_dict(state_dict, strict=False)
 
     model.cuda()
     model = nn.DataParallel(model)
 
     return model
-
-
-if __name__ == "__main__":
-    model = create_resnet18(pretrained=True)
-    print(model)

@@ -6,8 +6,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-
-
 class CategoricalMemory(nn.Module):
     def __init__(self):
         super(CategoricalMemory, self).__init__()
@@ -24,8 +22,6 @@ class CategoricalMemory(nn.Module):
         score_over_memory_cells = F.softmax(score, dim=1)
 
         return score_over_queries, score_over_memory_cells
-
-
 
     def _update_memory(self, query, labels, memory):
         # the query is of the shape bs x feat_dim
@@ -44,28 +40,28 @@ class CategoricalMemory(nn.Module):
         # update each of the memory compartments
         mem_comp, mem_cells, mem_size = memory.size()
         new_mem = torch.zeros((mem_comp, mem_cells, mem_size)).cuda()
-        new_mem[0] = F.normalize(memory[0] + torch.t(torch.matmul(torch.t(query[q0_idx]), q0_scores[0])))
-        new_mem[1] = F.normalize(memory[1] + torch.t(torch.matmul(torch.t(query[q1_idx]), q1_scores[0])))
-        new_mem[2] = F.normalize(memory[2] + torch.t(torch.matmul(torch.t(query[q2_idx]), q2_scores[0])))
+        new_mem[0] = F.normalize(
+            memory[0] + torch.t(torch.matmul(torch.t(query[q0_idx]), q0_scores[0]))
+        )
+        new_mem[1] = F.normalize(
+            memory[1] + torch.t(torch.matmul(torch.t(query[q1_idx]), q1_scores[0]))
+        )
+        new_mem[2] = F.normalize(
+            memory[2] + torch.t(torch.matmul(torch.t(query[q2_idx]), q2_scores[0]))
+        )
 
         return new_mem.detach_()
 
     def _read_memory(self, query, memory, labels):
         # first flatten the memory so that we can compute similarity between all of it and each query
         n_class, n_cells, mem_size = memory.size()
-        memory = memory.view(n_class*n_cells, mem_size)
+        memory = memory.view(n_class * n_cells, mem_size)
 
         scores = self._get_scores(query, memory)[1]
-        # max_idxs = torch.argmax(scores, dim=1) // 16
-        # same_elements = (max_idxs == labels).sum()
-        # print(same_elements)
         read_mem = torch.zeros(query.size()).to(query.device)
 
         for idx, q_row in enumerate(scores):
             read_mem[idx] = (q_row.unsqueeze(1) * memory).sum(0)
-        # print(read_mem)
-        # print((scores.unsqueeze(2) * memory).sum(0))
-        # query = torch.cat((query, read_mem), dim=1)
 
         return read_mem
 
@@ -77,27 +73,3 @@ class CategoricalMemory(nn.Module):
             memory = self._update_memory(query, labels, memory)
         # print(q.size())
         return q, memory
-
-
-
-if __name__ == '__main__':
-    memory = CategoricalMemory()
-    memory.train()
-    queries = torch.tensor([[1, 1],
-                           [2, 2],
-                           [3, 3],
-                            [1, 1],
-                            [2, 2],
-                            [3, 3]
-                            ], dtype=torch.float32)
-
-    labels = torch.tensor([0, 2, 2, 2, 1, 0])
-
-    memories = torch.rand((3, 3, 2))
-
-    query, mems = memory(queries, labels, memories)
-
-    # a = torch.tensor([[1, 2], [3, 4]])
-    # b = torch.tensor([[1, 2], [1, 2]])
-    #
-    # c = torch.einsum('')

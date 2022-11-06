@@ -28,7 +28,6 @@ base_vid_path = "/BS/unintentional_actions/nobackup/oops/oops_dataset/oops_video
 
 def test(**kwargs):
     model = kwargs["model"]
-    feat_extractor = kwargs["feat_extractor"]
     loss = kwargs["loss"]
     dataloader = kwargs["dataloader"]
     mode = kwargs["mode"]

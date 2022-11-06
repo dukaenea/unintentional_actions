@@ -322,10 +322,8 @@ def learn_representation():
 
     # if pretrained:
     #     optimizer = get_froze_trn_optimizer(model)
-    feat_extractor = build_resnet_50()
     train(
         model=model,
-        feat_extractor=feat_extractor,
         train_loader=train_loader,
         val_loader=val_loader,
         optimizer=optimizer,

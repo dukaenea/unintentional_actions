@@ -143,7 +143,7 @@ def main():
     model, optimizer, loss = create_model(
         pretrained=True, num_classes=1 if opt.task == "regression" else None
     )
-    feat_extractor = build_resnet_50()
+    feat_extractor = build_resnet_50(None)
     if opt.task == "classification":
         test(
             model=model,

@@ -22,7 +22,6 @@ from transformer2x.test_localisation import test_localisation
 
 def train(**kwargs):
     model = kwargs["model"]
-    feat_extractor = kwargs["feat_extractor"]
     train_loader = kwargs["train_loader"]
     val_loader = kwargs["val_loader"]
     optimizer = kwargs["optimizer"]
@@ -45,16 +44,9 @@ def train(**kwargs):
     aiayn_scheduler = AIAYNScheduler(
         opt.hidden_dim, 0.3 * (len(train_loader) * opt.epochs)
     )  # 10% of the steps for the warmup
-    feat_extractor.eval()
     model.eval()
     test(
-        model=model,
-        feat_extractor=feat_extractor,
-        loss=loss,
-        dataloader=val_loader,
-        mode="val",
-        time=tst,
-        epoch=-1,
+        model=model, loss=loss, dataloader=val_loader, mode="val", time=tst, epoch=-1,
     )
     # loss = torch.nn.CrossEntropyLoss(weight=torch.FloatTensor(
     #     [(19670 / 18069) + math.sqrt(1 / pca['acc_0']), (19670 / 4137) + math.sqrt(1 / pca['acc_1']),
@@ -225,7 +217,6 @@ def train(**kwargs):
         if opt.test_freq and epoch % opt.test_freq == 0:
             check_val = test(
                 model=model,
-                feat_extractor=feat_extractor,
                 loss=loss,
                 dataloader=val_loader,
                 mode="val",

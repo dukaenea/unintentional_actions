@@ -13,7 +13,7 @@ from torch.utils.data import DataLoader
 from models.resnet18 import create_resnet18
 
 
-def extract_resnet_features(dataset_name, mode, base_feature_path):
+def extract_resnet_features(dataset_name, mode, base_feature_path, model_pretrain_path):
     feat_path = "%s/%s/resnet_feats/resnet_18/%s_normalized/" % (
         base_feature_path,
         dataset_name,
@@ -50,7 +50,7 @@ def extract_resnet_features(dataset_name, mode, base_feature_path):
         )
 
     dataloader = DataLoader(dataset, batch_size=1, num_workers=0, shuffle=False)
-    model = create_resnet18()
+    model = create_resnet18(model_pretrain_path)
     model.cuda()
     model.eval()
 
@@ -70,4 +70,4 @@ def extract_resnet_features(dataset_name, mode, base_feature_path):
 
 if __name__ == "__main__":
     # os.environ['CUDA_VISIBLE_DEVICES'] = '1'
-    extract_resnet_features("oops", "val", "")
+    extract_resnet_features("oops", "val", "", None)
