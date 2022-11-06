@@ -1,8 +1,6 @@
 # @Author: Enea Duka
 # @Date: 4/24/21
-import sys
 
-sys.path.append("/BS/unintentional_actions/work/unintentional_actions")
 import torch
 from tqdm import tqdm
 import os
@@ -14,12 +12,10 @@ from torch.utils.data import DataLoader
 from models.r2plus1d import build_r2plus1d
 
 
-def extract_r2plus1d_feats(dataset_name, mode):
-    feat_path = "/BS/unintentional_actions/work/data/%s/r2plus1d_feats/%s_f32/" % (
-        dataset_name,
-        mode,
-    )
-    # feat_path = '/BS/unintentional_actions/nobackup/kinetics400/data_subset_npy/mode/' % mode
+def extract_r2plus1d_feats(dataset_name, mode, base_feature_path):
+    feat_path = "%s/%s/r2plus1d_feats/%s_f32/" % (base_feature_path, dataset_name, mode)
+    if not os.path.isdir(feat_path):
+        os.mkdir(feat_path)
     if dataset_name == "kinetics":
         # use the ImageNet stats
         dataset = KineticsDataset(
@@ -69,4 +65,4 @@ def extract_r2plus1d_feats(dataset_name, mode):
 
 
 if __name__ == "__main__":
-    extract_r2plus1d_feats("kinetics", "val")
+    extract_r2plus1d_feats("kinetics", "val", "")
