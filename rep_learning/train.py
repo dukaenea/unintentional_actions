@@ -149,12 +149,6 @@ def train(**kwargs):
 
             if idx % 100 == 0 and idx > 0:
                 logger.debug("Loss: %f" % loss_meter.avg)
-            # if idx == 300:
-            #     break
-            # if opt.debug and idx == 10:
-            #     break
-            # if opt.speed_and_motion:
-            #     break
 
         logger.debug("Loss: %f" % loss_meter.avg)
         logger.debug("BCE Loss: %f" % loss_meter.avg)
@@ -175,15 +169,6 @@ def train(**kwargs):
                 time=tst,
                 epoch=epoch,
             )
-            # opt.rep_learning = True
-            # opt.viz = True
-            # test_classify(model=model,
-            #              feat_extractor=feat_extractor,
-            #              loss=loss,
-            #              dataloader=val_loader_class,
-            #              mode='val',
-            #              time=tst,
-            #              epoch=epoch)
 
         if not opt.use_tqdm:
             print("=====================================================")
