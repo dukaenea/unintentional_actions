@@ -34,12 +34,6 @@ from utils.sampler import (
     RandomVideoSampler,
 )
 
-# normalize = T.Normalize(mean=get_mean(dataset='kinetics'),
-#                         std=get_std())
-# normalize = T.Normalize(mean=[0.43216, 0.394666, 0.37645],
-#                         std=[0.22803, 0.22145, 0.216989])
-# unnormalize = T.Unnormalize(mean=[0.43216, 0.394666, 0.37645],
-#                             std=[0.22803, 0.22145, 0.216989])
 normalize = T.Normalize(
     mean=[0.43216, 0.394666, 0.37645], std=[0.22803, 0.22145, 0.216989]
 )

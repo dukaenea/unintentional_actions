@@ -5,7 +5,6 @@ from torch.utils.data import Dataset
 from dataloaders.dl_utils import Normalize, tensor_to_zero_one
 from torch.utils.data.dataloader import default_collate
 
-# from utils.logging_setup import logger
 from random import sample, shuffle
 import pandas as pd
 import os.path as ops
@@ -21,9 +20,6 @@ from utils.arg_parse import opt
 from torch.utils.data import DataLoader
 from dataloaders.oops_loader import get_video_loader_frames
 
-# from utils.logging_setup import setup_logger_path
-# from models.vit import create_vit_model
-# from utils.logging_setup import logger
 import json
 import torchvision
 from torchvision import transforms
@@ -55,37 +51,25 @@ class SimpleOopsDataset(Dataset):
         fps,
         feature_level,
         spat_crop,
-        norm_statistics,
         spat_scale=False,
         balance=False,
         loc_class=False,
+        base_video_path=None,
+        base_video_path_frames=None,
     ):
         super(SimpleOopsDataset, self).__init__()
 
         self.feature_level = feature_level
         self.loc_class = loc_class
         self.balance = balance
-        if feature_level == "frames":
-            if opt.task == "classification":
-                self.base_video_path = (
-                    "/BS/unintentional_actions/nobackup/oops/oops_dataset/oops_video/%s"
-                    % mode
-                )
-            elif opt.task == "regression":
-                self.base_video_path = (
-                    "/BS/unintentional_actions/work/data/oops/vit_features/%s_normalised"
-                    % mode
-                )
-        else:
-            # self.base_video_path = '/BS/feat_augm/nobackup/oops/vit_features/%s' % mode
-            self.base_video_path = (
-                "/BS/unintentional_actions/work/data/oops/vit_features/%s_normalised"
-                % mode
-            )
-        self.base_video_path_frames = (
-            "/BS/unintentional_actions/nobackup/oops/oops_dataset/oops_video/%s" % mode
-        )
-        csv_path = "/BS/unintentional_actions/work/data/oops/splits/%s_0.csv" % mode
+        if base_video_path is None:
+            raise ValueError("Invalid value for base video path.")
+        self.base_video_path = base_video_path
+        if base_video_path_frames is None:
+            raise ValueError("Invalid value for base video path frames.")
+        self.base_video_path_frames = base_video_path_frames
+
+        csv_path = "../resources/data/oops/splits/%s_0.csv" % mode
         self.csv = pd.read_csv(csv_path)
         self.feature_level = feature_level
         self.spat_crop = spat_crop
@@ -107,7 +91,7 @@ class SimpleOopsDataset(Dataset):
             self._compute_clips()
 
         with open(
-            "/BS/unintentional_actions/nobackup/oops/oops_dataset/annotations/transition_times.json"
+            "../resources/data/oops/annotations/heldout_transition_times.json"
         ) as f:
             self.fails_borders = json.load(f)
 
@@ -120,13 +104,12 @@ class SimpleOopsDataset(Dataset):
     def _compute_clips(self):
         if self.loc_class:
             clips_meta_path = (
-                "/BS/unintentional_actions/work/data/oops/vit_features/%s_clip_meta_full_loc_class.npz"
+                "../resources/data/oops/vit_features/%s_clip_meta_full_loc_class.npz"
                 % self.mode
             )
         else:
             clips_meta_path = (
-                "/BS/unintentional_actions/work/data/oops/vit_features/%s_clip_meta_full.npz"
-                % self.mode
+                "../resources/data/oops/vit_features/%s_clip_meta_full.npz" % self.mode
             )  # (self.mode if self.mode == 'val' else (self.mode+'_unbalanced'))
         if ops.isfile(clips_meta_path):
             compressed_file = np.load(clips_meta_path, allow_pickle=True)
@@ -642,56 +625,3 @@ class SimpleOopsDataset(Dataset):
             return {"filename": self.csv.iloc[idx]["filename"]}
 
         return output
-
-
-if __name__ == "__main__":
-
-    # model = create_vit_model()
-    # model.cuda()
-    # model.eval()
-
-    train_set = SimpleOopsDataset(
-        "train",
-        16,
-        "features" if opt.task == "classification" else "frames",
-        True,
-        {"mean": [0.485, 0.456, 0.406], "std": [0.229, 0.224, 0.225]},
-        balance=True,
-    )
-    val_set = SimpleOopsDataset(
-        "val",
-        16,
-        "features" if opt.task == "classification" else "frames",
-        True,
-        {"mean": [0.485, 0.456, 0.406], "std": [0.229, 0.224, 0.225]},
-    )
-
-    train_loader = DataLoader(
-        val_set, num_workers=32, batch_size=256, shuffle=True, drop_last=True
-    )
-
-    opt.batch_size = 1
-    opt.workers = 0
-    opt.balance_fails_only = True
-    opt.all_fail_videos = True
-    opt.selfsup_loss = "fps"
-    train_loader = get_video_loader_frames(opt)
-    opt.val = True
-    opt.fails_path = "/BS/unintentional_actions/nobackup/oops/oops_dataset/oops_video"
-    # val_loader = get_video_loader(opt)
-
-    zeros = 0
-    ones = 0
-    twos = 0
-
-    for idx, data in enumerate(tqdm(train_loader)):
-        # labels = data['label'].tolist()
-        # # clip = data[0]
-        # # clip_feats = model(clip.squeeze().permute(1, 0, 2, 3))
-        # zeros += labels.count(0)
-        # ones += labels.count(1)
-        # twos += labels.count(2)
-        pass
-    print(zeros)
-    print(ones)
-    print(twos)

@@ -1,30 +1,19 @@
 # @Author: Enea Duka
 # @Date: 5/3/21
-import sys
 import warnings
 
-sys.path.append('/BS/unintentional_actions/work/unintentional_actions')
 import os
-import argparse
-import time
 from dataloaders.kinetics_loader import KineticsDataset
 from new_action_localisation.my_oops_loader import get_video_loader
 from transformer2x.my_oops_loader import get_video_loader_trn_2x
-from dataloaders.rareacts_loader import RareactsDataset
 from dataloaders.oops_loader_simple import SimpleOopsDataset
 from torch.utils.data import DataLoader
-from tqdm import tqdm
-from new_action_localisation.pm_vtn import create_model, get_froze_trn_optimizer
-from models.resnet50 import build_resnet_50
-from models.mlp import create_mlp_model
+from new_action_localisation.pm_vtn import create_model
 from new_action_localisation.train import train
 from utils.logging_setup import setup_logger_path
 from utils.arg_parse import opt
-import torch
 from datetime import datetime
 from torch.utils.data.dataloader import default_collate
-from dataloaders.trn_ad_loader import get_anomaly_loader
-
 
 
 def learn_representation():
@@ -160,13 +149,30 @@ def learn_representation():
     # opt.test_freq = 1
     # opt.save_model = 1
     # opt.pretrained = True  #################################################################################################
-    opt.log_name = 'lr:%f~ep:%d~bs:%d~win:%d~b_lr:%f~ptr:%s_cntr_loss' % (opt.lr, opt.epochs, opt.batch_size,
-                                                                opt.attention_window[0], opt.backbone_lr_factor,
-                                                                str(opt.pretrained))
-    opt.viz_env = '%s.%s%s_%s.' % (opt.model_name, opt.temp_learning_dataset_name, opt.env_pref, opt.sfx)
-    opt.sfx = str('%s.unint_act.%s.layers%d.attn_win%d.time%s_cntr_loss' % (
-        opt.dataset, opt.task, opt.num_hidden_layers, opt.attention_window[0],
-        datetime.now().strftime('%Y%m%d-%H%M%S')))
+    opt.log_name = "lr:%f~ep:%d~bs:%d~win:%d~b_lr:%f~ptr:%s_cntr_loss" % (
+        opt.lr,
+        opt.epochs,
+        opt.batch_size,
+        opt.attention_window[0],
+        opt.backbone_lr_factor,
+        str(opt.pretrained),
+    )
+    opt.viz_env = "%s.%s%s_%s." % (
+        opt.model_name,
+        opt.temp_learning_dataset_name,
+        opt.env_pref,
+        opt.sfx,
+    )
+    opt.sfx = str(
+        "%s.unint_act.%s.layers%d.attn_win%d.time%s_cntr_loss"
+        % (
+            opt.dataset,
+            opt.task,
+            opt.num_hidden_layers,
+            opt.attention_window[0],
+            datetime.now().strftime("%Y%m%d-%H%M%S"),
+        )
+    )
 
     # opt.debug = False
     #
@@ -181,37 +187,72 @@ def learn_representation():
     setup_logger_path()
 
     train_set, val_set, test_set = None, None, None
-    if opt.dataset == 'kinetics':
-        train_set = KineticsDataset('train', fps=25, fpc=32, spat_crop=True, hflip=False,
-                                    norm_statistics={'mean': [0.43216, 0.394666, 0.37645],
-                                                     'std': [0.22803, 0.22145, 0.216989]},
-                                    feat_ext=True,
-                                    data_level=opt.rep_data_level,
-                                    feat_set='%s_feats' % opt.rep_backbone)
-        val_set = KineticsDataset('val', fps=25, fpc=32, spat_crop=True, hflip=False,
-                                  norm_statistics={'mean': [0.43216, 0.394666, 0.37645],
-                                                   'std': [0.22803, 0.22145, 0.216989]},
-                                  feat_ext=True,
-                                  data_level=opt.rep_data_level,
-                                  feat_set='%s_feats' % opt.rep_backbone)
-        test_set = KineticsDataset('test', fps=25, fpc=32, spat_crop=True, hflip=False,
-                                   norm_statistics={'mean': [0.43216, 0.394666, 0.37645],
-                                                    'std': [0.22803, 0.22145, 0.216989]},
-                                   feat_ext=True,
-                                   data_level=opt.rep_data_level,
-                                   feat_set='%s_feats' % opt.rep_backbone)
-    elif opt.dataset == 'rareact':
+    if opt.dataset == "kinetics":
+        train_set = KineticsDataset(
+            "train",
+            fps=25,
+            fpc=32,
+            spat_crop=True,
+            hflip=False,
+            norm_statistics={
+                "mean": [0.43216, 0.394666, 0.37645],
+                "std": [0.22803, 0.22145, 0.216989],
+            },
+            feat_ext=True,
+            data_level=opt.rep_data_level,
+            feat_set="%s_feats" % opt.rep_backbone,
+        )
+        val_set = KineticsDataset(
+            "val",
+            fps=25,
+            fpc=32,
+            spat_crop=True,
+            hflip=False,
+            norm_statistics={
+                "mean": [0.43216, 0.394666, 0.37645],
+                "std": [0.22803, 0.22145, 0.216989],
+            },
+            feat_ext=True,
+            data_level=opt.rep_data_level,
+            feat_set="%s_feats" % opt.rep_backbone,
+        )
+        test_set = KineticsDataset(
+            "test",
+            fps=25,
+            fpc=32,
+            spat_crop=True,
+            hflip=False,
+            norm_statistics={
+                "mean": [0.43216, 0.394666, 0.37645],
+                "std": [0.22803, 0.22145, 0.216989],
+            },
+            feat_ext=True,
+            data_level=opt.rep_data_level,
+            feat_set="%s_feats" % opt.rep_backbone,
+        )
+    elif opt.dataset == "rareact":
         pass
-    elif opt.dataset == 'oops':
-        train_set = SimpleOopsDataset('train', 16, 'features' if opt.task == 'classification' else 'frames', True,
-                                      {'mean': [0.485, 0.456, 0.406], 'std': [0.229, 0.224, 0.225]}, balance=True)
-        val_set = SimpleOopsDataset('val', 16, 'features' if opt.task == 'classification' else 'frames', True,
-                                    {'mean': [0.485, 0.456, 0.406], 'std': [0.229, 0.224, 0.225]})
+    elif opt.dataset == "oops":
+        train_set = SimpleOopsDataset(
+            "train",
+            16,
+            "features" if opt.task == "classification" else "frames",
+            True,
+            {"mean": [0.485, 0.456, 0.406], "std": [0.229, 0.224, 0.225]},
+            balance=True,
+        )
+        val_set = SimpleOopsDataset(
+            "val",
+            16,
+            "features" if opt.task == "classification" else "frames",
+            True,
+            {"mean": [0.485, 0.456, 0.406], "std": [0.229, 0.224, 0.225]},
+        )
         pass
-    elif opt.dataset == 'all':
+    elif opt.dataset == "all":
         pass
 
-    if opt.dataset == 'oops':
+    if opt.dataset == "oops":
         if opt.use_crf:
             # opt.batch_size = 16
             # opt.workers = 32
@@ -221,7 +262,9 @@ def learn_representation():
             opt.step_between_clips_sec = 0.25
             train_loader = get_video_loader_trn_2x(opt)
             opt.val = True
-            opt.fails_path = '/BS/unintentional_actions/nobackup/oops/oops_dataset/oops_video'
+            opt.fails_path = (
+                "/BS/unintentional_actions/nobackup/oops/oops_dataset/oops_video"
+            )
             val_loader = get_video_loader_trn_2x(opt)
         else:
             # opt.batch_size = 64
@@ -232,32 +275,42 @@ def learn_representation():
             # # opt.step_between_clips_sec = 1.0
             train_loader = get_video_loader(opt)
             opt.val = True
-            opt.fails_path = '/BS/unintentional_actions/nobackup/oops/oops_dataset/oops_video'
+            opt.fails_path = (
+                "/BS/unintentional_actions/nobackup/oops/oops_dataset/oops_video"
+            )
             val_loader = get_video_loader(opt)
 
-
-
     else:
-        train_loader = DataLoader(train_set,
-                                  num_workers=opt.num_workers,
-                                  batch_size=opt.batch_size,
-                                  shuffle=True,
-                                  drop_last=True,
-                                  collate_fn=train_set.pad_videos_collate_fn if opt.task == 'regression' else default_collate)
+        train_loader = DataLoader(
+            train_set,
+            num_workers=opt.num_workers,
+            batch_size=opt.batch_size,
+            shuffle=True,
+            drop_last=True,
+            collate_fn=train_set.pad_videos_collate_fn
+            if opt.task == "regression"
+            else default_collate,
+        )
 
-        val_loader = DataLoader(val_set,
-                                num_workers=opt.num_workers,
-                                batch_size=opt.batch_size,
-                                shuffle=True,
-                                drop_last=True,
-                                collate_fn=train_set.pad_videos_collate_fn if opt.task == 'regression' else default_collate)
+        val_loader = DataLoader(
+            val_set,
+            num_workers=opt.num_workers,
+            batch_size=opt.batch_size,
+            shuffle=True,
+            drop_last=True,
+            collate_fn=train_set.pad_videos_collate_fn
+            if opt.task == "regression"
+            else default_collate,
+        )
 
     # if opt.dataset == 'avenue':
     #     train_loader = get_anomaly_loader('avenue', 10, 1/25 , 25, load_videos=False, val=False)
     #     val_loader = get_anomaly_loader('avenue', 16, 1 / 25, 25, load_videos=False, val=True)
 
-
-    model, optimizer, loss = create_model(num_classes=100 if opt.dataset == 'kinetics' else opt.num_classes, pretrained=opt.pretrained)
+    model, optimizer, loss = create_model(
+        num_classes=100 if opt.dataset == "kinetics" else opt.num_classes,
+        pretrained=opt.pretrained,
+    )
 
     epoch = 0
 
@@ -269,18 +322,20 @@ def learn_representation():
     # if pretrained:
     #     optimizer = get_froze_trn_optimizer(model)
     # feat_extractor = build_resnet_50()
-    train(model=model,
-          train_loader=train_loader,
-          val_loader=val_loader,
-          optimizer=optimizer,
-          loss=loss,
-          test_freq=1,
-          epochs=25,
-          epoch=epoch)
+    train(
+        model=model,
+        train_loader=train_loader,
+        val_loader=val_loader,
+        optimizer=optimizer,
+        loss=loss,
+        test_freq=1,
+        epochs=25,
+        epoch=epoch,
+    )
 
 
-if __name__ == '__main__':
-    os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+if __name__ == "__main__":
+    os.environ["CUDA_VISIBLE_DEVICES"] = "0"
     warnings.filterwarnings("ignore")
 
     learn_representation()

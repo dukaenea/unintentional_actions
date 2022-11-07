@@ -27,29 +27,8 @@ from utils.sampler import (
     ConcatSampler,
 )
 
-# normalize = T.Normalize(mean=get_mean(dataset='kinetics'),
-#                         std=get_std())
-# normalize = T.Normalize(mean=[0.43216, 0.394666, 0.37645],
-#                         std=[0.22803, 0.22145, 0.216989])
-# unnormalize = T.Unnormalize(mean=[0.43216, 0.394666, 0.37645],
-#                             std=[0.22803, 0.22145, 0.216989])
 normalize = T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 unnormalize = T.Unnormalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
-# train_transform = torchvision.transforms.Compose([
-#     T.ToFloatTensorInZeroOne(),
-#     T.RandomGray(),
-#     T.Resize((int(224 * 4))),
-#     T.RandomRotate(),
-#     T.RandomCrop((224, 224)),
-#     T.RandomHorizontalFlip(),
-#     normalize
-# ])
-# test_transform = torchvision.transforms.Compose([
-#     T.ToFloatTensorInZeroOne(),
-#     T.Resize(171),
-#     T.CenterCrop((112, 112)),
-#     normalize,
-# ])
 
 train_transform = torchvision.transforms.Compose(
     [
@@ -68,37 +47,6 @@ test_transform = torchvision.transforms.Compose(
         T.CenterCrop((112, 112)),
     ]
 )
-
-# def get_flow_histogram(flow):
-#     flow_magnitude = ((flow[..., 0] ** 2 + flow[..., 1] ** 2) ** 0.5).flatten()
-#     flow_magnitude[flow_magnitude > 99] = 99
-#     return torch.histc(flow_magnitude, min=0, max=100) / len(flow_magnitude)
-
-
-# histogram_flow_transform = lambda flow: get_flow_histogram(flow)
-
-
-# CODE for 0,1,2 class imbalance (should go in init of dataset)
-# y_tracker = Counter()
-# fast_y_tracker = Counter()
-# for video_idx, vid_clips in tqdm(enumerate(self.video_clips.clips), total=len(self.video_clips.clips)):
-#     video_path = self.video_clips.video_paths[video_idx]
-#     t_unit = av.open(video_path, metadata_errors='ignore').streams[0].time_base
-#     t_fail = sorted(self.fails_data[os.path.splitext(os.path.basename(video_path))[0]]['t'])
-#     t_fail = t_fail[len(t_fail) // 2]
-#     for clip_idx, clip in enumerate(vid_clips):
-#         start_pts = clip[0].item()
-#         end_pts = clip[-1].item()
-#         t_start = float(t_unit * start_pts)
-#         t_end = float(t_unit * end_pts)
-#         label = 0
-#         if t_start <= t_fail <= t_end:
-#             label = 1
-#         elif t_start > t_fail:
-#             label = 2
-#         y_tracker[label] += 1
-#         fast_y_tracker[self.video_clips.labels[video_idx][clip_idx]] += 1
-# print({k: round(100 * v / sum(y_tracker.values()), 2) for k, v in y_tracker.items()})
 
 
 class KineticsAndFails(VisionDataset):
@@ -165,12 +113,10 @@ class KineticsAndFails(VisionDataset):
                 video_list, frames_per_clip, step_between_clips, fps, num_workers=16
             )
         with open(
-            "/BS/unintentional_actions/nobackup/oops/oops_dataset/annotations/heldout_transition_times.json"
+            "../resources/data/oops/annotations/heldout_transition_times.json"
         ) as f:
             self.fails_borders = json.load(f)
-        with open(
-            "/BS/unintentional_actions/nobackup/oops/oops_dataset/annotations/transition_times.json"
-        ) as f:
+        with open("../resources/data/oops/annotations/transition_times.json") as f:
             self.fails_data = json.load(f)
         self.fails_only = fails_only
         # get start and end time of the clip

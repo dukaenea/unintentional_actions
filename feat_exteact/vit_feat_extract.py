@@ -8,12 +8,9 @@ import numpy as np
 from dataloaders.kinetics_loader import KineticsDataset
 from dataloaders.rareacts_loader import RareactsDataset
 from dataloaders.oops_loader_simple import SimpleOopsDataset
-from dataloaders.pedestrian_loader import PedestrianDataset
-from dataloaders.avenue_loader import AvenueDataset
 from torch.utils.data import DataLoader
 from models.vit import create_vit_model
 from utils.logging_setup import logger, setup_logger_path
-from dataloaders.ucf_crime_video_loader import UCFCrimeVideoLoader
 from utils.arg_parse import opt
 import warnings
 
@@ -40,18 +37,6 @@ def extract_vit_features(dataset_name, mode, base_path):
         dataset = SimpleOopsDataset(
             mode, 25, "frames", True, {"mean": [0.5, 0.5, 0.5], "std": [0.5, 0.5, 0.5]}
         )
-    elif dataset_name == "pedestrian":
-        dataset = PedestrianDataset(mode, gray_scale=False)
-    elif dataset_name == "avenue":
-        dataset = AvenueDataset(
-            mode,
-            (224, 224),
-            "/BS/unintentional_actions/nobackup/avenue/avenue/training"
-            if mode == "train"
-            else "/BS/unintentional_actions/nobackup/avenue/avenue/testing",
-        )
-    elif dataset_name == "ucf_crime":
-        dataset = UCFCrimeVideoLoader(mode, load_frames=True)
 
     opt.model_name = "ViT_VideoLongformer_MLP"
     opt.sfx = str("unint_act.layers")

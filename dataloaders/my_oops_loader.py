@@ -5,7 +5,6 @@ import json
 import os
 import random
 import statistics
-from argparse import Namespace
 from glob import glob
 
 import av
@@ -29,8 +28,7 @@ from utils.sampler import (
     ConcatSampler,
 )
 
-# normalize = T.Normalize(mean=get_mean(dataset='kinetics'),
-#                         std=get_std())
+
 normalize = T.Normalize(
     mean=[0.43216, 0.394666, 0.37645], std=[0.22803, 0.22145, 0.216989]
 )
@@ -66,7 +64,6 @@ class KineticsAndFails(VisionDataset):
     def __init__(
         self,
         fails_path,
-        kinetics_path,
         frames_per_clip,
         step_between_clips,
         fps,
@@ -87,27 +84,22 @@ class KineticsAndFails(VisionDataset):
         anticipate_label=0,
         data_proportion=1,
         t_units=None,
-        load_frames=False,
-        **kwargs,
+        base_features_path=None ** kwargs,
     ):
         self.clip_len = frames_per_clip / fps
         self.clip_step = step_between_clips / fps
         self.clip_interval_factor = clip_interval_factor
         self.fps = fps
         self.t = transform
-        # self.load_flow = load_flow
-        # self.flow_histogram = flow_histogram
         self.video_clips = None
         self.fails_path = fails_path
-        # self.fails_flow_path = fails_flow_path
         self.selfsup_loss = selfsup_loss
         self.get_clip_times = get_clip_times
         self.anticipate_label = anticipate_label
         data_proportion = 1 if val else data_proportion
-        self.base_features_path = (
-            "/BS/unintentional_actions/work/data/oops/vit_features/%s_normalised"
-            % ("val" if val else "train")
-        )
+        if base_features_path is None:
+            raise ValueError("Invalid value for base features path.")
+        self.base_features_path = base_features_path
         self.video_time_units = t_units
 
         if video_clips:
@@ -131,12 +123,10 @@ class KineticsAndFails(VisionDataset):
                 video_list, frames_per_clip, step_between_clips, fps, num_workers=16
             )
         with open(
-            "/BS/unintentional_actions/nobackup/oops/oops_dataset/annotations/heldout_transition_times.json"
+            "../resources/data/oops/annotations/heldout_transition_times.json"
         ) as f:
             self.fails_borders = json.load(f)
-        with open(
-            "/BS/unintentional_actions/nobackup/oops/oops_dataset/annotations/transition_times.json"
-        ) as f:
+        with open("../resources/data/oops/annotations/transition_times.json") as f:
             self.fails_data = json.load(f)
         self.fails_only = fails_only
         # get start and end time of the clip
@@ -611,15 +601,3 @@ def get_video_loader(args):
         pin_memory=True,
         drop_last=False,
     )
-
-
-if __name__ == "__main__":
-    opt.batch_size = 32
-    opt.workers = 32
-    opt.balance_fails_only = True
-    opt.all_fail_videos = False
-    opt.load_videos = False
-    # # opt.step_between_clips_sec = 1.0
-    video_loader = get_video_loader(opt)
-    for idx, data in enumerate(tqdm(video_loader)):
-        pass
