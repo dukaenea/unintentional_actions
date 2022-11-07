@@ -1,4 +1,3 @@
-
 # @Author: Enea Duka
 # @Date: 9/21/21
 
@@ -20,19 +19,19 @@ try:
 
     loader_details = (
         importlib.machinery.ExtensionFileLoader,
-        importlib.machinery.EXTENSION_SUFFIXES
+        importlib.machinery.EXTENSION_SUFFIXES,
     )
 
     extfinder = importlib.machinery.FileFinder(lib_dir, loader_details)
     ext_specs = extfinder.find_spec("video_reader")
 
-    if os.name == 'nt':
+    if os.name == "nt":
         # Load the video_reader extension using LoadLibraryExW
         import ctypes
         import sys
 
-        kernel32 = ctypes.WinDLL('kernel32.dll', use_last_error=True)
-        with_load_library_flags = hasattr(kernel32, 'AddDllDirectory')
+        kernel32 = ctypes.WinDLL("kernel32.dll", use_last_error=True)
+        with_load_library_flags = hasattr(kernel32, "AddDllDirectory")
         prev_error_mode = kernel32.SetErrorMode(0x0001)
 
         if with_load_library_flags:
@@ -42,8 +41,10 @@ try:
             res = kernel32.LoadLibraryExW(ext_specs.origin, None, 0x00001100)
             if res is None:
                 err = ctypes.WinError(ctypes.get_last_error())
-                err.strerror += (f' Error loading "{ext_specs.origin}" or any or '
-                                 'its dependencies.')
+                err.strerror += (
+                    f' Error loading "{ext_specs.origin}" or any or '
+                    "its dependencies."
+                )
                 raise err
 
         kernel32.SetErrorMode(prev_error_mode)
@@ -115,8 +116,7 @@ def _validate_pts(pts_range):
             pts_range[0] <= pts_range[1]
         ), """Start pts should not be smaller than end pts, got
             start pts: {0:d} and end pts: {1:d}""".format(
-            pts_range[0],
-            pts_range[1],
+            pts_range[0], pts_range[1],
         )
 
 
@@ -267,10 +267,18 @@ def _read_video_from_file(
         audio_timebase.numerator,
         audio_timebase.denominator,
     )
-    vframes, _vframe_pts, vtimebase, vfps, vduration, \
-        aframes, aframe_pts, atimebase, asample_rate, aduration = (
-            result
-        )
+    (
+        vframes,
+        _vframe_pts,
+        vtimebase,
+        vfps,
+        vduration,
+        aframes,
+        aframe_pts,
+        atimebase,
+        asample_rate,
+        aduration,
+    ) = result
     info = _fill_info(vtimebase, vfps, vduration, atimebase, asample_rate, aduration)
     if aframes.numel() > 0:
         # when audio stream is found
@@ -281,7 +289,7 @@ def _read_video_from_file(
 def _read_video_timestamps_from_file(filename):
     """
     Decode all video- and audio frames in the video. Only pts
-    (presentation timestamp) is returned. The actual frame pixel data is not
+    (presentation timestamp) is returned. The actual frame pixel metadata is not
     copied. Thus, it is much faster than read_video(...)
     """
     result = torch.ops.video_reader.read_video_from_file(
@@ -305,8 +313,18 @@ def _read_video_timestamps_from_file(filename):
         0,  # audio_timebase_num
         1,  # audio_timebase_den
     )
-    _vframes, vframe_pts, vtimebase, vfps, vduration, \
-        _aframes, aframe_pts, atimebase, asample_rate, aduration = (result)
+    (
+        _vframes,
+        vframe_pts,
+        vtimebase,
+        vfps,
+        vduration,
+        _aframes,
+        aframe_pts,
+        atimebase,
+        asample_rate,
+        aduration,
+    ) = result
     info = _fill_info(vtimebase, vfps, vduration, atimebase, asample_rate, aduration)
 
     vframe_pts = vframe_pts.numpy().tolist()
@@ -350,7 +368,7 @@ def _read_video_from_memory(
 
     Args
     ----------
-    video_data : data type could be 1) torch.Tensor, dtype=torch.int8 or 2) python bytes
+    video_data : metadata type could be 1) torch.Tensor, dtype=torch.int8 or 2) python bytes
         compressed video content stored in either 1) torch.Tensor 2) python bytes
     seek_frame_margin: double, optional
         seeking frame in the stream is imprecise. Thus, when video_start_pts is specified,
@@ -430,10 +448,18 @@ def _read_video_from_memory(
         audio_timebase_denominator,
     )
 
-    vframes, _vframe_pts, vtimebase, vfps, vduration, \
-        aframes, aframe_pts, atimebase, asample_rate, aduration = (
-            result
-        )
+    (
+        vframes,
+        _vframe_pts,
+        vtimebase,
+        vfps,
+        vduration,
+        aframes,
+        aframe_pts,
+        atimebase,
+        asample_rate,
+        aduration,
+    ) = result
 
     if aframes.numel() > 0:
         # when audio stream is found
@@ -445,7 +471,7 @@ def _read_video_from_memory(
 def _read_video_timestamps_from_memory(video_data):
     """
     Decode all frames in the video. Only pts (presentation timestamp) is returned.
-    The actual frame pixel data is not copied. Thus, read_video_timestamps(...)
+    The actual frame pixel metadata is not copied. Thus, read_video_timestamps(...)
     is much faster than read_video(...)
     """
     if not isinstance(video_data, torch.Tensor):
@@ -471,10 +497,18 @@ def _read_video_timestamps_from_memory(video_data):
         0,  # audio_timebase_num
         1,  # audio_timebase_den
     )
-    _vframes, vframe_pts, vtimebase, vfps, vduration, \
-        _aframes, aframe_pts, atimebase, asample_rate, aduration = (
-            result
-        )
+    (
+        _vframes,
+        vframe_pts,
+        vtimebase,
+        vfps,
+        vduration,
+        _aframes,
+        aframe_pts,
+        atimebase,
+        asample_rate,
+        aduration,
+    ) = result
     info = _fill_info(vtimebase, vfps, vduration, atimebase, asample_rate, aduration)
 
     vframe_pts = vframe_pts.numpy().tolist()

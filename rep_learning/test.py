@@ -159,14 +159,14 @@ def test(**kwargs):
     #         iterator = enumerate(tqdm(video_loader))
     #     else:
     #         iterator = enumerate(video_loader)
-    #     for idx, data in iterator:
-    #         keys = list(data.keys())
-    #         videos = data.get(keys[0])
+    #     for idx, metadata in iterator:
+    #         keys = list(metadata.keys())
+    #         videos = metadata.get(keys[0])
     #         # videos = videos.unsqueeze(1)
-    #         labels = data['label']
-    #         pure_nr_frames = data['pure_nr_frames']
+    #         labels = metadata['label']
+    #         pure_nr_frames = metadata['pure_nr_frames']
     #         if opt.contrastive_loss:
-    #             dsets = data['dset']
+    #             dsets = metadata['dset']
     #         # shuffle_idx = torch.randperm(videos.shape[0])
     #         # videos = videos[shuffle_idx]
     #         # pure_nr_frames = pure_nr_frames[shuffle_idx]

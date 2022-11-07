@@ -63,7 +63,7 @@ def test(**kwargs):
         for idx, data in iterator:
             videos = data["features"].squeeze()
             pure_nr_frames = data["pure_nr_frames"].squeeze()
-            # video_names = data['video_name']
+            # video_names = metadata['video_name']
             position_ids = (
                 torch.tensor(list(range(0, videos.shape[1])))
                 .expand(1, videos.shape[1])

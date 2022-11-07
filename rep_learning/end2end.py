@@ -132,10 +132,10 @@ if __name__ == "__main__":
         optimizer.load_state_dict(saved_model["optimizer"])
         epoch = saved_model["epoch"] + 1
 
-    # for idx, data in enumerate(tqdm(train_loader)):
-    #     videos = data[0]
-    #     labels = data[1]
-    #     pnfs = data[2]
+    # for idx, metadata in enumerate(tqdm(train_loader)):
+    #     videos = metadata[0]
+    #     labels = metadata[1]
+    #     pnfs = metadata[2]
     #
     #     continue
 

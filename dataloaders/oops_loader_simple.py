@@ -69,7 +69,7 @@ class SimpleOopsDataset(Dataset):
             raise ValueError("Invalid value for base video path frames.")
         self.base_video_path_frames = base_video_path_frames
 
-        csv_path = "../resources/data/oops/splits/%s_0.csv" % mode
+        csv_path = "../resources/metadata/oops/splits/%s_0.csv" % mode
         self.csv = pd.read_csv(csv_path)
         self.feature_level = feature_level
         self.spat_crop = spat_crop
@@ -91,7 +91,7 @@ class SimpleOopsDataset(Dataset):
             self._compute_clips()
 
         with open(
-            "../resources/data/oops/annotations/heldout_transition_times.json"
+            "../resources/metadata/oops/annotations/heldout_transition_times.json"
         ) as f:
             self.fails_borders = json.load(f)
 
@@ -104,12 +104,13 @@ class SimpleOopsDataset(Dataset):
     def _compute_clips(self):
         if self.loc_class:
             clips_meta_path = (
-                "../resources/data/oops/vit_features/%s_clip_meta_full_loc_class.npz"
+                "../resources/metadata/oops/vit_features/%s_clip_meta_full_loc_class.npz"
                 % self.mode
             )
         else:
             clips_meta_path = (
-                "../resources/data/oops/vit_features/%s_clip_meta_full.npz" % self.mode
+                "../resources/metadata/oops/vit_features/%s_clip_meta_full.npz"
+                % self.mode
             )  # (self.mode if self.mode == 'val' else (self.mode+'_unbalanced'))
         if ops.isfile(clips_meta_path):
             compressed_file = np.load(clips_meta_path, allow_pickle=True)
@@ -381,7 +382,7 @@ class SimpleOopsDataset(Dataset):
         max_batch_len = max([s["features"].shape[0] for s in batch])
         num_nrm = sum([1 for s in batch if s["t"] == -1])
         for data in batch:
-            # if data['t'] != -1:
+            # if metadata['t'] != -1:
             #     if sampled_unrm == num_nrm:
             #         continue
             #     sampled_unrm += 1

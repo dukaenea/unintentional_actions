@@ -54,8 +54,8 @@ class KineticsDataset(Dataset):
         self.data_level = data_level
         self.speeds = [0, 1, 2, 3]
 
-        self.classes_path = "../resources/data/kinetics/splits/rep_lrn_classes.txt"
-        self.csv_path = "../resources/data/kinetics/splits/%s_rep_lrn.csv" % mode
+        self.classes_path = "../resources/metadata/kinetics/splits/rep_lrn_classes.txt"
+        self.csv_path = "../resources/metadata/kinetics/splits/%s_rep_lrn.csv" % mode
         if video_root_path is None:
             raise ValueError("Invalid value for video root path.")
         self.video_path = "%s/%s/%s" % (video_root_path, data_level, mode)

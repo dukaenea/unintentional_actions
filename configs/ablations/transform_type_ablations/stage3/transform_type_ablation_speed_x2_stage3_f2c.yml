@@ -16,7 +16,7 @@ oops:
   remove_fns: 'None'
   sample_all_clips: true
   clips_per_video: 10
-  kinetics_path: '/BS/unintentional_actions/nobackup/kinetics400/data'
+  kinetics_path: '/BS/unintentional_actions/nobackup/kinetics400/metadata'
   frames_per_clip: 16
   clip_interval_factor: 1
   dataset_path: '/BS/unintentional_actions/nobackup/oops'

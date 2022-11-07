@@ -8,8 +8,8 @@ from pprint import pprint
 
 
 def subsample(split, m_samples=250, prev_classes=None):
-    csv_file = '/BS/unintentional_actions/work/data/kinetics/splits/%s.csv' % split
-    output_dir = '/BS/unintentional_actions/work/data/kinetics/splits/'
+    csv_file = "/BS/unintentional_actions/work/metadata/kinetics/splits/%s.csv" % split
+    output_dir = "/BS/unintentional_actions/work/metadata/kinetics/splits/"
     selected_classes = {} if prev_classes is None else prev_classes
     samples = []
     max_classes = 100
@@ -19,7 +19,7 @@ def subsample(split, m_samples=250, prev_classes=None):
         vid_csv = DictReader(f)
 
         for row in tqdm(vid_csv):
-            label = row['label']
+            label = row["label"]
             if label in selected_classes.keys():
                 if selected_classes[label] < max_samples:
                     selected_classes[label] += 1
@@ -30,10 +30,12 @@ def subsample(split, m_samples=250, prev_classes=None):
                     samples.append(row)
 
         if prev_classes is None:
-            with open(ops.join(output_dir, 'rep_lrn_classes') + '.txt', 'w') as cf:
+            with open(ops.join(output_dir, "rep_lrn_classes") + ".txt", "w") as cf:
                 for idx, c in enumerate(selected_classes):
-                    cf.write(str(idx) + ' %s\n' % c.replace(' ', '_'))
-        with open(ops.join(output_dir, '%s_rep_lrn' % split) + '.csv', 'w', newline='') as mf:
+                    cf.write(str(idx) + " %s\n" % c.replace(" ", "_"))
+        with open(
+            ops.join(output_dir, "%s_rep_lrn" % split) + ".csv", "w", newline=""
+        ) as mf:
             d_writer = DictWriter(mf, samples[0].keys())
             d_writer.writeheader()
             d_writer.writerows(samples)
@@ -47,8 +49,8 @@ def zero_out_classes(classes):
     return classes
 
 
-if __name__ == '__main__':
-    classes = subsample('train')
+if __name__ == "__main__":
+    classes = subsample("train")
     classes = zero_out_classes(classes)
-    subsample('val', 300, classes)
-    subsample('test', 300, classes)
+    subsample("val", 300, classes)
+    subsample("test", 300, classes)

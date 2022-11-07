@@ -123,10 +123,10 @@ class KineticsAndFails(VisionDataset):
                 video_list, frames_per_clip, step_between_clips, fps, num_workers=16
             )
         with open(
-            "../resources/data/oops/annotations/heldout_transition_times.json"
+            "../resources/metadata/oops/annotations/heldout_transition_times.json"
         ) as f:
             self.fails_borders = json.load(f)
-        with open("../resources/data/oops/annotations/transition_times.json") as f:
+        with open("../resources/metadata/oops/annotations/transition_times.json") as f:
             self.fails_data = json.load(f)
         self.fails_only = fails_only
         # get start and end time of the clip

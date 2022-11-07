@@ -4,6 +4,7 @@ from fractions import Fraction
 from typing import List
 
 import torch
+
 # from torchvision.io import (
 #     _probe_video_from_file,
 #     _read_video_from_file,
@@ -12,7 +13,11 @@ import torch
 #     read_video_timestamps,
 # )
 
-from utils.my_video_opt import _probe_video_from_file, _read_video_from_file, _read_video_timestamps_from_file
+from utils.my_video_opt import (
+    _probe_video_from_file,
+    _read_video_from_file,
+    _read_video_timestamps_from_file,
+)
 from utils.my_video import read_video, read_video_timestamps
 
 from tqdm import tqdm
@@ -90,8 +95,8 @@ class VideoClips(object):
         frame_rate (int, optional): if specified, it will resample the video
             so that it has `frame_rate`, and then the clips will be defined
             on the resampled video
-        num_workers (int): how many subprocesses to use for data loading.
-            0 means that the data will be loaded in the main process. (default: 0)
+        num_workers (int): how many subprocesses to use for metadata loading.
+            0 means that the metadata will be loaded in the main process. (default: 0)
     """
 
     def __init__(

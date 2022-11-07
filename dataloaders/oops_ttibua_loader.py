@@ -34,7 +34,7 @@ class OopsTtibua(Dataset):
         self.norm = Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
 
         self.csv_path = (
-            "/BS/unintentional_actions/work/data/oops/splits/%s_all_org.csv" % mode
+            "/BS/unintentional_actions/work/metadata/oops/splits/%s_all_org.csv" % mode
         )
 
         if load_frames:
@@ -44,10 +44,11 @@ class OopsTtibua(Dataset):
             )
         else:
             self.oops_video_path = (
-                "/BS/unintentional_actions/work/data/oops/vit_features/%s_all" % mode
+                "/BS/unintentional_actions/work/metadata/oops/vit_features/%s_all"
+                % mode
             )
             self.oops_video_path_labeld = (
-                "/BS/unintentional_actions/work/data/oops/vit_features/%s_normalised"
+                "/BS/unintentional_actions/work/metadata/oops/vit_features/%s_normalised"
                 % mode
             )
 
@@ -760,7 +761,7 @@ class OopsTtibua(Dataset):
                     if data["features"].shape[0] > min_len:
                         data["features"] = video[:min_len]
                     # video = video.permute(0, 2, 3, 1)
-                    # data['features'] = train_transform(video).permute(1, 0, 2, 3)
+                    # metadata['features'] = train_transform(video).permute(1, 0, 2, 3)
             else:
                 max_len = max([s["features"].shape[0] for s in new_batch])
                 for data in new_batch:

@@ -169,7 +169,7 @@ def _read_from_stream(
     if len(frames) > 0 and start_offset > 0 and start_offset not in frames:
         # if there is no frame that exactly matches the pts of start_offset
         # add the last frame smaller than start_offset, to guarantee that
-        # we will have all the necessary data. This is most useful for audio
+        # we will have all the necessary metadata. This is most useful for audio
         preceding_frames = [i for i in frames if i < start_offset]
         if len(preceding_frames) > 0:
             first_frame_pts = max(preceding_frames)
@@ -178,7 +178,10 @@ def _read_from_stream(
 
 
 def _align_audio_frames(
-    aframes: torch.Tensor, audio_frames: List["av.frame.Frame"], ref_start: int, ref_end: float
+    aframes: torch.Tensor,
+    audio_frames: List["av.frame.Frame"],
+    ref_start: int,
+    ref_end: float,
 ) -> torch.Tensor:
     start, end = audio_frames[0].pts, audio_frames[-1].pts
     total_aframes = aframes.shape[1]
@@ -193,7 +196,10 @@ def _align_audio_frames(
 
 
 def read_video(
-    filename: str, start_pts: int = 0, end_pts: Optional[float] = None, pts_unit: str = "pts"
+    filename: str,
+    start_pts: int = 0,
+    end_pts: Optional[float] = None,
+    pts_unit: str = "pts",
 ) -> Tuple[torch.Tensor, Dict[str, Any]]:
     """
     Reads a video from a file, returning both the video frames as well as
@@ -310,7 +316,9 @@ def _decode_video_timestamps(container: "av.container.Container") -> List[int]:
         return [x.pts for x in container.decode(video=0) if x.pts is not None]
 
 
-def read_video_timestamps(filename: str, pts_unit: str = "pts") -> Tuple[List[int], Optional[float]]:
+def read_video_timestamps(
+    filename: str, pts_unit: str = "pts"
+) -> Tuple[List[int], Optional[float]]:
     """
     List the video frames timestamps.
 

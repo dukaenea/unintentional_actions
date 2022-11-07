@@ -173,9 +173,9 @@ def test(**kwargs):
             visualize_crf_preds(out, pure_nr_frames, data, video_names, labels)
             # best_scores, best_lengths, best_out, best_t, best_times = keep_cleanest_video(out, labels, best_scores,
             #                                                                               best_lengths, pure_nr_frames,
-            #                                                                               best_out, data, best_t,
+            #                                                                               best_out, metadata, best_t,
             #                                                                               best_times, vis_metadata)
-            # outputs = keep_relevant_outs(out, data, outputs)
+            # outputs = keep_relevant_outs(out, metadata, outputs)
 
         # print(total)
         # print(best_scores)
@@ -563,7 +563,7 @@ if __name__ == "__main__":
     ]
 
     with open(
-        "/BS/unintentional_actions/work/data/oops/epstain/results_-00001_016.json"
+        "/BS/unintentional_actions/work/metadata/oops/epstain/results_-00001_016.json"
     ) as f:
         preds = json.load(f)
 

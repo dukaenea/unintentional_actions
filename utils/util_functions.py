@@ -9,13 +9,15 @@ import torch.nn as nn
 from matplotlib import pyplot as plt
 import numpy as np
 from sklearn.metrics import roc_auc_score, roc_curve, auc
+
 # from torchmetrics import AUROC
+
 
 class Labels:
     def __init__(self, path, nums=False):
         self.label2idx = {}
         self.idx2label = {}
-        with open(path, 'r') as f:
+        with open(path, "r") as f:
             for line in f:
                 idx, label = line.strip().split()
                 idx = int(idx)
@@ -36,18 +38,16 @@ class Labels:
 
 
 class Meter(object):
-    def __init__(self, mode='', name=''):
+    def __init__(self, mode="", name=""):
         self.mode = mode
         self.name = name
         self.val, self.avg, self.sum, self.count = 0, 0, 0, 0
 
     def log(self):
-        logger.debug('%s %s: %f' % (self.mode.upper(), self.name, self.avg))
+        logger.debug("%s %s: %f" % (self.mode.upper(), self.name, self.avg))
 
     def viz_dict(self):
-        return {
-            '%s/%s' % (self.name, self.mode.upper()): self.avg
-        }
+        return {"%s/%s" % (self.name, self.mode.upper()): self.avg}
 
     def reset(self):
         self.val, self.avg, self.sum, self.count = 0, 0, 0, 0
@@ -64,13 +64,15 @@ class AIAYNScheduler:
         self.d_model = d_model
         self.warmup_steps = warmup_steps
         self.lr_base = 1e-8
+
     def step(self, optimizer, step):
         arg1 = (step + 1) ** -0.5
         arg2 = (step + 1) * (self.warmup_steps ** -1.5)
         new_lr = self.d_model ** -0.5 * min(arg1, arg2)
         for param_group in optimizer.param_groups:
-            param_group['lr'] = self.lr_base + new_lr
+            param_group["lr"] = self.lr_base + new_lr
         return self.lr_base + new_lr
+
 
 def compute_mean_and_std(dataloader):
     mean = torch.zeros((1, 3))
@@ -78,7 +80,7 @@ def compute_mean_and_std(dataloader):
     num_videos = 0
     print(mean)
     for idx, data in enumerate(tqdm(dataloader)):
-        features = data['features'].squeeze()
+        features = data["features"].squeeze()
         try:
             features = features.permute(1, 0, 2, 3)
         except RuntimeError:
@@ -104,7 +106,7 @@ def compute_mean_and_std_single_channel(dataloader):
     num_videos = 0
     print(mean)
     for idx, data in enumerate(tqdm(dataloader)):
-        features = data['video'].squeeze()
+        features = data["video"].squeeze()
         # try:
         #     features = features.permute(1, 0, 2, 3)
         # except RuntimeError:
@@ -135,19 +137,29 @@ def adjust_lr(optimizer, new_lr, decay_factor):
     """Decrease learning rate during training"""
     new_lr *= decay_factor
     for param_group in optimizer.param_groups:
-        param_group['lr'] = new_lr
+        param_group["lr"] = new_lr
     return new_lr
 
 
 def trn_label2idx(label_list):
-    lab2idx = {'rotate': 1, 'shift': 2, 'scale': 3,
-               'spacial_cutout': 4, 'random_crop': 5, 'flip': 6,
-               'temporal_cutout': 7, 'fast_forward': 8, 'time_warp': 9,
-               'temp_transform': -1}
+    lab2idx = {
+        "rotate": 1,
+        "shift": 2,
+        "scale": 3,
+        "spacial_cutout": 4,
+        "random_crop": 5,
+        "flip": 6,
+        "temporal_cutout": 7,
+        "fast_forward": 8,
+        "time_warp": 9,
+        "temp_transform": -1,
+    }
 
     if len(label_list) == 0:
         return [0] + [-2] * (len(lab2idx.keys()) - 1)
-    return [lab2idx[key] for key in label_list] + [-2] * (len(lab2idx.keys()) - len(label_list))
+    return [lab2idx[key] for key in label_list] + [-2] * (
+        len(lab2idx.keys()) - len(label_list)
+    )
 
 
 def label_idx_to_one_hot(label_idxs):
@@ -162,7 +174,7 @@ def label_idx_to_one_hot(label_idxs):
 
 
 class Precision(object):
-    def __init__(self, mode=''):
+    def __init__(self, mode=""):
         self.mode = mode
         self._top1 = 0
         self._total = 0
@@ -177,7 +189,6 @@ class Precision(object):
 
         fpr, tpr, thresholds = roc_curve(y_true=labels, y_score=outs, pos_label=1)
         return auc(fpr, tpr), fpr, tpr
-
 
     def update_probs_loc_class(self, outputs, labels, trn_times, clip_boundries):
         outs = torch.softmax(outputs, dim=1)
@@ -195,11 +206,10 @@ class Precision(object):
         if best_trn_bound[0] <= trn_times <= best_trn_bound[1]:
             self._top1 += 1
 
-
     def update_probs_sig(self, outputs, labels):
         self._total += outputs.shape[0]
         for idx, label in enumerate(labels):
-            ones_idx = ((label > 0).nonzero(as_tuple=True)[0])
+            ones_idx = (label > 0).nonzero(as_tuple=True)[0]
             out_top_idx = torch.sort(torch.topk(outputs[idx], ones_idx.shape[0])[1])[0]
             if ones_idx.shape == out_top_idx.shape:
                 if torch.all(ones_idx.eq(out_top_idx)):
@@ -210,7 +220,6 @@ class Precision(object):
         for idx, label in enumerate(labels):
             if torch.abs(label - outputs[0]) < 0.05:
                 self._top1 += 1
-
 
     def update_probs_reg(self, outputs, labels, lens):
         self._total += outputs.shape[0]
@@ -229,13 +238,13 @@ class Precision(object):
             max_idx = torch.argmax(out)
             if report_pca:
                 if self.lab_class[labels[idx]] is None:
-                    self.lab_class[labels[idx]] = {'total': 1, 'correct': 0}
+                    self.lab_class[labels[idx]] = {"total": 1, "correct": 0}
                 else:
-                    self.lab_class[labels[idx]]['total'] += 1
+                    self.lab_class[labels[idx]]["total"] += 1
             if max_idx == labels[idx]:
                 self._top1 += 1
                 if report_pca:
-                    self.lab_class[labels[idx]]['correct'] += 1
+                    self.lab_class[labels[idx]]["correct"] += 1
         # outputs = F.softmax(outputs, dim=1)
         # max_idxs = torch.argmax(outputs, dim=1)
         # self._top1 += torch.sum((max_idxs==labels)).item()
@@ -251,7 +260,7 @@ class Precision(object):
         auc = roc_auc_score(labels, output)
         fnr = 1 - tpr
         eer = fpr[np.nanargmin(np.absolute((fnr - fpr)))]
-        plt.plot(fpr, tpr, label="data 1, auc=" + str(auc))
+        plt.plot(fpr, tpr, label="metadata 1, auc=" + str(auc))
         plt.show()
         return auc, eer
 
@@ -264,19 +273,18 @@ class Precision(object):
             max_idx = o
             if report_pca:
                 if self.lab_class[labels[idx]] is None:
-                    self.lab_class[labels[idx]] = {'total': 1, 'correct': 0}
+                    self.lab_class[labels[idx]] = {"total": 1, "correct": 0}
                 else:
-                    self.lab_class[labels[idx]]['total'] += 1
+                    self.lab_class[labels[idx]]["total"] += 1
             if max_idx == labels[idx]:
                 if report_pca:
-                    self.lab_class[labels[idx]]['correct'] += 1
-
+                    self.lab_class[labels[idx]]["correct"] += 1
 
     def top1(self, report_pca=False):
         if report_pca:
             class_prec = []
             for cl in self.lab_class:
-                class_prec.append(cl['correct']/cl['total'])
+                class_prec.append(cl["correct"] / cl["total"])
             logger.debug(str(class_prec))
         return self._top1 / self._total
 
@@ -295,10 +303,9 @@ def lr_func_cosine(base_lr, end_lr, max_epochs, cur_epoch):
     assert end_lr < base_lr
     return (
         end_lr
-        + (base_lr - end_lr)
-        * (math.cos(math.pi * cur_epoch / max_epochs) + 1.0)
-        * 0.5
+        + (base_lr - end_lr) * (math.cos(math.pi * cur_epoch / max_epochs) + 1.0) * 0.5
     )
+
 
 def consist_loss(out, org_out, org_idx):
     nr_out = out.shape[0]
@@ -319,8 +326,13 @@ def consist_loss(out, org_out, org_idx):
 
     indicators.flatten()
     distances.flatten()
-    loss = (indicators * distances ** 2 + (1-indicators) * torch.max(torch.zeros_like(indicators), 0.2 - distances) ** 2).sum()
+    loss = (
+        indicators * distances ** 2
+        + (1 - indicators)
+        * torch.max(torch.zeros_like(indicators), 0.2 - distances) ** 2
+    ).sum()
     return loss
+
 
 def contrastive_loss(out, dsets):
     out_c = torch.clone(out)
@@ -341,11 +353,12 @@ def contrastive_loss(out, dsets):
 
     indicators.flatten()
     distances.flatten()
-    loss = (indicators * distances ** 2 + (1 - indicators) * torch.max(torch.zeros_like(indicators),
-                                                                       0.2 - distances) ** 2).mean()
+    loss = (
+        indicators * distances ** 2
+        + (1 - indicators)
+        * torch.max(torch.zeros_like(indicators), 0.2 - distances) ** 2
+    ).mean()
     return loss
-
-
 
 
 class RegressionLoss(nn.Module):
@@ -362,6 +375,7 @@ class RegressionLoss(nn.Module):
             else:
                 total_loss += self.sl1(outs[idx], label)
         return total_loss
+
 
 class DistributionPlotter(object):
     def __init__(self):
@@ -382,9 +396,9 @@ class DistributionPlotter(object):
         self.bins = [tb / sum(self.bins) for tb in self.bins]
         x = range(11)
         plt.bar(x, self.bins)
-        plt.title('Train split relative action start time distribution')
-        plt.xlabel('Relative video time')
-        plt.ylabel('% Videos/Bin')
+        plt.title("Train split relative action start time distribution")
+        plt.xlabel("Relative video time")
+        plt.ylabel("% Videos/Bin")
         plt.show()
 
 
@@ -400,10 +414,10 @@ def plot_valid_add_and_loss(acc, loss):
     ax.set_yticks(major_ticks)
     ax.set_yticks(minor_ticks, minor=True)
 
-    ax.grid(which='both')
+    ax.grid(which="both")
 
-    ax.plot(x, acc, label='VAL Acc')
-    ax.plot(x, loss, label='VAL Loss')
+    ax.plot(x, acc, label="VAL Acc")
+    ax.plot(x, loss, label="VAL Loss")
 
     plt.show()
 
@@ -428,22 +442,46 @@ def mil_objective(y_pred, y_true):
 
     sparsity_loss = anomal_vid_sc.sum(dim=-1)
 
-    final_loss = (hinge_loss + labmdas*smoothed_scores_ss + labmdas*sparsity_loss).mean()
+    final_loss = (
+        hinge_loss + labmdas * smoothed_scores_ss + labmdas * sparsity_loss
+    ).mean()
 
     return final_loss
 
 
-if __name__ == '__main__':
-    acc = [0.0020, 0.0702, 0.9863, 0.3462, 0.3255, 0.3489, 0.5820, 0.3020, 0.8320, 0.2020]
-    loss = [0.3255, 0.3489, 0.5820, 0.3020, 0.8320, 0.2020, 0.0020, 0.0702, 0.9863, 0.3462]
+if __name__ == "__main__":
+    acc = [
+        0.0020,
+        0.0702,
+        0.9863,
+        0.3462,
+        0.3255,
+        0.3489,
+        0.5820,
+        0.3020,
+        0.8320,
+        0.2020,
+    ]
+    loss = [
+        0.3255,
+        0.3489,
+        0.5820,
+        0.3020,
+        0.8320,
+        0.2020,
+        0.0020,
+        0.0702,
+        0.9863,
+        0.3462,
+    ]
 
     out = torch.rand((5, 768))
-    labels = torch.randint(0, 3, (5, ))
+    labels = torch.randint(0, 3, (5,))
     mmargin_contrastive_loss(out.cuda(), labels.cuda())
 
-    # # some data
+    # # some metadata
     # orig = torch.rand(2, 5)
-    # # where we want to put the data
+    # # where we want to put the metadata
     # # notice: idx.size() is equal orig.size()
     # # idx will be dimension zero index of the target))
     # idx = torch.LongTensor([[0, 1, 2, 0, 0], [2, 0, 0, 1, 2]])

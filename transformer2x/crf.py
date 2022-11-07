@@ -32,7 +32,7 @@ class CRF(nn.Module):
 
     .. [LMP01] Lafferty, J., McCallum, A., Pereira, F. (2001).
        "Conditional random fields: Probabilistic models for segmenting and
-       labeling sequence data". *Proc. 18th International Conf. on Machine
+       labeling sequence metadata". *Proc. 18th International Conf. on Machine
        Learning*. Morgan Kaufmann. pp. 282–289.
 
     .. _Viterbi algorithm: https://en.wikipedia.org/wiki/Viterbi_algorithm

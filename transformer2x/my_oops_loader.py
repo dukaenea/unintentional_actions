@@ -110,7 +110,7 @@ class KineticsAndFails(VisionDataset):
                 % ("val" if val else "train")
             )
         else:
-            # self.base_features_path = '/BS/unintentional_actions/work/data/oops/vit_features/%s_normalised' % (
+            # self.base_features_path = '/BS/unintentional_actions/work/metadata/oops/vit_features/%s_normalised' % (
             #     'val' if val else 'train')
             self.base_features_path = (
                 "/BS/unintentional_actions/nobackup/oops/resnet_feats/resnet_18/%s_normalized"

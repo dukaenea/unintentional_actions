@@ -28,8 +28,8 @@ class RareactsDataset(Dataset):
         self.training = True if mode == "train" else False
         self.norm = Normalize(mean=norm_statistics["mean"], std=norm_statistics["std"])
 
-        self.classes_path = "../resources/data/rareacts/splits/train_classes.txt"
-        self.csv_path = "../resources/data/rareacts/splits/%s.csv" % mode
+        self.classes_path = "../resources/metadata/rareacts/splits/train_classes.txt"
+        self.csv_path = "../resources/metadata/rareacts/splits/%s.csv" % mode
         if video_root_path is None:
             raise ValueError("Invalid value for video root path.")
 
