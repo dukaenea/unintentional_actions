@@ -3,7 +3,7 @@
 
 import torch
 
-from utils.util_functions import Precision, label_idx_to_one_hot
+from utils.util_functions import Precision
 from tqdm import tqdm
 from utils.logging_setup import viz
 from utils.plotting_utils import visdom_plot_losses
@@ -177,12 +177,6 @@ def test(**kwargs):
             #                                                                               best_times, vis_metadata)
             # outputs = keep_relevant_outs(out, metadata, outputs)
 
-        # print(total)
-        # print(best_scores)
-        # print(best_lengths)
-        # print(best_t)
-        # print(best_times)
-        # print(best_out)
         # write_vis_meta_to_csv(vis_metadata)
         # all_outs = [o.numpy() for o in all_outs]
         # all_labels = [l.item() for l in all_labels]
@@ -551,39 +545,3 @@ def plot_scores(scores, times, video_name):
 
 import pandas as pd
 import json
-
-if __name__ == "__main__":
-    paths = [
-        "/BS/unintentional_actions/nobackup/oops/oops_dataset/oops_video/val/Are You Serious! - Throwback Thursday (September 2017) _ FailArmy64.mp4",
-        "/BS/unintentional_actions/nobackup/oops/oops_dataset/oops_video/val/Best Fails of the Year 2017 - Part 1 (December 2017) _ FailArmy12.mp4",
-        "/BS/unintentional_actions/nobackup/oops/oops_dataset/oops_video/val/Fails of the Week - Insult to Injury (January 2017) _ FailArmy1.mp4",
-        "/BS/unintentional_actions/nobackup/oops/oops_dataset/oops_video/val/Let's Get It!! - FailArmy After Dark (ep. 2)88.mp4",
-        "/BS/unintentional_actions/nobackup/oops/oops_dataset/oops_video/val/Funny School Fails Compilation _ 'School's Out' By FailArmy 20167.mp4",
-        "/BS/unintentional_actions/nobackup/oops/oops_dataset/oops_video/val/Break Yourself - Fails of the Week (September 2017) _ FailArmy15.mp4",
-    ]
-
-    with open(
-        "/BS/unintentional_actions/work/metadata/oops/epstain/results_-00001_016.json"
-    ) as f:
-        preds = json.load(f)
-
-    pred_conf = []
-    times = []
-    for idx, pred in enumerate(preds):
-        path = pred["fn"]
-        if path in paths:
-            conf = torch.tensor(pred["y_hat_vec"])
-            time = (pred["t_end"] - pred["t_start"]) / 2 + pred["t_start"]
-
-            pred_conf.append(conf)
-            times.append(time)
-        else:
-            if len(pred_conf) > 0:
-                path = preds[idx - 1]["fn"]
-                name_parts = path.split("/")
-                name = name_parts[-1]
-                name = name[:-4]
-                plot_scores(torch.stack(pred_conf), times, name)
-                pass
-            pred_conf = []
-            times = []

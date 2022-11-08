@@ -20,7 +20,6 @@ from torch.utils.data import ConcatDataset
 from torchvision.datasets.video_utils import VideoClips
 from torchvision.datasets.vision import VisionDataset
 from tqdm import tqdm
-from utils.arg_parse import opt
 from collections import defaultdict
 from utils.logging_setup import logger
 import ffmpeg
@@ -88,6 +87,7 @@ class KineticsAndFails(VisionDataset):
         t_units=None,
         load_videos=False,
         load_frames=False,
+        base_features_path=None,
         **kwargs,
     ):
         self.clip_len = frames_per_clip / fps
@@ -104,18 +104,9 @@ class KineticsAndFails(VisionDataset):
         self.get_clip_times = get_clip_times
         self.anticipate_label = anticipate_label
         data_proportion = 1 if val else data_proportion
-        if load_frames:
-            self.base_features_path = (
-                "/BS/unintentional_actions/nobackup/oops/oops_dataset/oops_video/%s_downsize"
-                % ("val" if val else "train")
-            )
-        else:
-            # self.base_features_path = '/BS/unintentional_actions/work/metadata/oops/vit_features/%s_normalised' % (
-            #     'val' if val else 'train')
-            self.base_features_path = (
-                "/BS/unintentional_actions/nobackup/oops/resnet_feats/resnet_18/%s_normalized"
-                % ("val" if val else "train")
-            )
+        if base_features_path is None:
+            raise ValueError("Invalid value for base features path.")
+        self.base_features_path = base_features_path
 
         self.video_time_units = t_units
         self.load_videos = load_videos
@@ -142,12 +133,10 @@ class KineticsAndFails(VisionDataset):
                 video_list, frames_per_clip, step_between_clips, fps, num_workers=16
             )
         with open(
-            "/BS/unintentional_actions/nobackup/oops/oops_dataset/annotations/heldout_transition_times.json"
+            "../resources/metadata/oops/annotations/heldout_transition_times.json"
         ) as f:
             self.fails_borders = json.load(f)
-        with open(
-            "/BS/unintentional_actions/nobackup/oops/oops_dataset/annotations/transition_times.json"
-        ) as f:
+        with open("../resources/metadata/oops/annotations/transition_times.json") as f:
             self.fails_data = json.load(f)
         self.fails_only = fails_only
         # get start and end time of the clip
@@ -810,10 +799,3 @@ def get_video_loader_trn_2x(args):
         pin_memory=True,
         drop_last=True,
     )
-
-
-if __name__ == "__main__":
-    opt.batch_size = 1
-    video_loader = get_video_loader_trn_2x(opt)
-    for idx, data in enumerate(video_loader):
-        print(data)

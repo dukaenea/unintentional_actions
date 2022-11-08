@@ -7,16 +7,12 @@
 
 import torch
 
-from utils.util_functions import Precision, label_idx_to_one_hot
+from utils.util_functions import Precision
 from tqdm import tqdm
-from utils.logging_setup import viz
-from utils.plotting_utils import visdom_plot_losses
 from utils.util_functions import Meter
 from utils.arg_parse import opt
 from utils.logging_setup import logger
 from utils.util_functions import DistributionPlotter
-from visualization.visualize_unint_action_localization import visualize_perdiction
-import statistics
 
 
 def test_localisation(**kwargs):
@@ -24,14 +20,10 @@ def test_localisation(**kwargs):
     loss = kwargs["loss"]
     dataloader = kwargs["dataloader"]
     mode = kwargs["mode"]
-    epoch = kwargs["epoch"]
-    time_id = kwargs["time"]
 
     model.eval()
     prec = Precision(mode)
     meter = Meter(mode=mode, name="loss")
-    if opt.task == "regression":
-        out_dist_plotter = DistributionPlotter()
 
     outputs = {}
 
@@ -85,15 +77,6 @@ def test_localisation(**kwargs):
         meter.log()
         logger.debug("Val Acc: %f" % prec.top1(report_pca=True))
         calc_acc(outputs)
-        # if opt.task == 'regression':
-        #     out_dist_plotter.plot_out_dist()
-    #     if opt.viz and epoch % opt.viz_freq == 0:
-    #         visdom_plot_losses(viz.env, opt.log_name + '-loss-' + str(time_id), epoch,
-    #                            xylabel=('epoch', 'loss'), **meter.viz_dict())
-    #         visdom_plot_losses(viz.env, opt.log_name + '-prec-' + str(time_id), epoch,
-    #                            xylabel=('epoch', 'prec@1'), **{'pr@1/%s' % mode.upper():  prec.top1()})
-    # logger.debug('Val Acc: %f' % prec.top1())
-    # return {'top1': prec.top1()}
 
 
 def keep_relevant_outs(out, data, outputs):
@@ -147,10 +130,6 @@ def calc_acc(outs):
                 f_time = clip["f_time"]
 
         total += 1
-        # if time.size() == 0:
-        # if abs(f_time - time) <= 1:
-        #     correct += 1
-        # # else:
         if min(abs(f_time - t) for t in time) <= 0.25:
             if best_for_vis is None and 20 > len(clips) > 15:
                 best_for_vis = {
@@ -158,10 +137,6 @@ def calc_acc(outs):
                     "g_trn": time.mean(),
                     "p_trn": f_time,
                 }
-            # else:
-            #     if min(abs(f_time - t) for t in time) < abs(best_for_vis['g_trn'].item() - best_for_vis['p_trn']):
-            #         t_idx = torch.argmin(torch.abs(time - f_time))
-            #         best_for_vis = {'video_name': value['video_name'], 'g_trn': time[t_idx], 'p_trn': f_time}
             correct += 1
         else:
             if worst_for_vis is None and 1 < abs(f_time - time.mean()) < 1.5:
@@ -173,8 +148,3 @@ def calc_acc(outs):
 
     print(best_for_vis)
     print("Acc Val: %f" % (correct / total))
-
-    # print(str(best_for_vis))
-    # print(str(worst_for_vis))
-    # visualize_perdiction(best_for_vis['video_name'], best_for_vis['g_trn'], best_for_vis['p_trn'])
-    # visualize_perdiction(worst_for_vis['video_name'], worst_for_vis['g_trn'], worst_for_vis['p_trn'])

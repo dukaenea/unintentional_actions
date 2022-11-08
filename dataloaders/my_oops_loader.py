@@ -84,7 +84,8 @@ class KineticsAndFails(VisionDataset):
         anticipate_label=0,
         data_proportion=1,
         t_units=None,
-        base_features_path=None ** kwargs,
+        base_features_path=None,
+        **kwargs,
     ):
         self.clip_len = frames_per_clip / fps
         self.clip_step = step_between_clips / fps
