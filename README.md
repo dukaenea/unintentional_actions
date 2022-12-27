@@ -1,4 +1,4 @@
-# SslUAR
+# SSL UAR
 This is the official representation of [Leveraging Self-Supervised Training for Unintentional Action Recognition](https://arxiv.org/pdf/2209.11870.pdf).
 
 
