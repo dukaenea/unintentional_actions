@@ -1,6 +1,7 @@
 # SSL UAR
 This is the official representation of [Leveraging Self-Supervised Training for Unintentional Action Recognition](https://arxiv.org/pdf/2209.11870.pdf).
 
+[Project](https://dukaenea.github.io/ssl_uar/)
 
 Please cite as below in case you use the code.
 ```
